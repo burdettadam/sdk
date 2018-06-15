@@ -1,17 +1,29 @@
 # VCX
 ## Linux
 1) Install rust and rustup (https://www.rust-lang.org/install.html).
-2) Install libindy_1.4.0~533 (https://repo.sovrin.org/sdk/deb/pool/xenial/stable/libi/libindy/)
-3) Clone this repo to your local machine.
-4) From the local repository run the following commands to verify everything works:
+2) Install libindy_1.4.0~533
     ```
-    $ cargo build
-    $ cargo test
+    sudo curl -fsOSL https://repo.sovrin.org/sdk/deb/pool/xenial/stable/libi/libindy/libindy_1.4.0_amd64.deb\
+    && sudo dpkg -i libindy_1.4.0_amd64.deb\
+    && sudo apt-get -f install
     ```
-5) Currently developers are using intellij for IDE development (https://www.jetbrains.com/idea/download/) with the rust plugin (https://plugins.jetbrains.com/plugin/8182-rust).
-
-"Everything is awesome when you're part of a team!" #TeamOneDirection
-
+3) Install libnullpay 
+    ```
+    sudo curl -fsOSL https://repo.sovrin.org/sdk/lib/apt/xenial/master/libnullpay_0.1.0~568_amd64.deb\
+    && sudo dpkg -i libnullpay_0.1.0~568_amd64.deb\
+    && sudo apt-get -f install
+    ```
+4) Clone this repo to your local machine.
+    ```
+    git clone https://github.com/burdettadam/sdk.git
+    cd sdk/vcx/libvcx/
+    ```
+5) From the local repository run the following commands to verify everything works:
+    ```
+    TARGET=-linux-;\
+    cargo build;\
+    cargo test
+    ```
 # Debians and Artifacts
 
 **`libvcx_<ver>_amd.deb`**
@@ -119,5 +131,7 @@ To build libvcx on your own you can follow these steps --
 5) Run `android_build.sh aarm64` to build libvcx for aarm64 architecture.(Other architerctures will follow soon)
 6) Tests are not working on Android as of now.
 
-
+###Developing 
+Current developers suggest using intellij for IDE development (https://www.jetbrains.com/idea/download/) with the rust plugin (https://plugins.jetbrains.com/plugin/8182-rust).
+ 
 

@@ -2,7 +2,7 @@
 
 name = "libvcx"
 version = "0.1.2097319"
-authors = [ "Mark Hadley <mark.hadley@evernym.com>" ]
+authors = [ "Mark Hadley <mark.hadley@evernym.com>, TedRub" ]
 publish = false
 description = "C callable library for libvcx"
 license = ""
@@ -42,7 +42,7 @@ rmp-serde = "0.13.7"
 base64 = "0.8.0"
 openssl = "0.10"
 num-traits = "0.2.0"
-rust-indy-sdk = {git = "https://github.com/mikelodder7/rust-indy-sdk.git"}
+rust-indy-sdk = {git = "https://github.com/burdettadam/rust-indy-sdk.git"}
 log-panics = "2.0.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
@@ -60,7 +60,7 @@ tempfile = "2.2"
 
 [package.metadata.deb]
 maintainer = "Mark Hadley<mark.hadley@evernym.com>, Devin Fisher, Ryan Marsh, Doug Wightman"
-copyright = "2018, Evernym Inc."
+copyright = "2018, Evernym Inc., Apache 2 license"
 depends = "$auto, libindy (=1.4.0~560), libnullpay (=0.1.0~560)"
 extended-description = """\
 "TODO DESCRIPTION"""

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["create_proof",""],["from_string",""],["generate_nonce",""],["get_proof",""],["get_proof_state",""],["get_proof_uuid",""],["get_source_id",""],["get_state",""],["is_valid_handle",""],["release",""],["release_all",""],["send_proof_request",""],["to_string",""],["update_state",""]],"struct":[["Proof",""]]});

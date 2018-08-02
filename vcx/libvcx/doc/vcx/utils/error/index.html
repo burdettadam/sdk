@@ -1,0 +1,620 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `error` mod in crate `vcx`."><meta name="keywords" content="rust, rustlang, rust-lang, error"><title>vcx::utils::error - Rust</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><p class='location'>Module error</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#statics">Statics</a></li><li><a href="#functions">Functions</a></li></ul></div><p class='location'><a href='../../index.html'>vcx</a>::<wbr><a href='../index.html'>utils</a></p><script>window.sidebarCurrent = {name: 'error', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='in-band'>Module <a href='../../index.html'>vcx</a>::<wbr><a href='../index.html'>utils</a>::<wbr><a class="mod" href=''>error</a></span><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../../../src/vcx/utils/error.rs.html#1-424' title='goto source code'>[src]</a></span></h1><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Error.html"
+                                  title='struct vcx::utils::error::Error'>Error</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table><h2 id='statics' class='section-header'><a href="#statics">Statics</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.ALREADY_INITIALIZED.html"
+                                  title='static vcx::utils::error::ALREADY_INITIALIZED'>ALREADY_INITIALIZED</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.BIG_NUMBER_ERROR.html"
+                                  title='static vcx::utils::error::BIG_NUMBER_ERROR'>BIG_NUMBER_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.BUILD_CREDENTIAL_DEF_REQ_ERR.html"
+                                  title='static vcx::utils::error::BUILD_CREDENTIAL_DEF_REQ_ERR'>BUILD_CREDENTIAL_DEF_REQ_ERR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CANNOT_DELETE_CONNECTION.html"
+                                  title='static vcx::utils::error::CANNOT_DELETE_CONNECTION'>CANNOT_DELETE_CONNECTION</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.COMMON_ERROR.html"
+                                  title='static vcx::utils::error::COMMON_ERROR'>COMMON_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONNECTION_ERROR.html"
+                                  title='static vcx::utils::error::CONNECTION_ERROR'>CONNECTION_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CREATE_CONNECTION_ERROR.html"
+                                  title='static vcx::utils::error::CREATE_CONNECTION_ERROR'>CREATE_CONNECTION_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CREATE_CREDENTIAL_DEF_ERR.html"
+                                  title='static vcx::utils::error::CREATE_CREDENTIAL_DEF_ERR'>CREATE_CREDENTIAL_DEF_ERR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CREATE_CREDENTIAL_REQUEST_ERROR.html"
+                                  title='static vcx::utils::error::CREATE_CREDENTIAL_REQUEST_ERROR'>CREATE_CREDENTIAL_REQUEST_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CREATE_POOL_CONFIG.html"
+                                  title='static vcx::utils::error::CREATE_POOL_CONFIG'>CREATE_POOL_CONFIG</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CREATE_POOL_CONFIG_PARAMETERS.html"
+                                  title='static vcx::utils::error::CREATE_POOL_CONFIG_PARAMETERS'>CREATE_POOL_CONFIG_PARAMETERS</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CREATE_PROOF_ERROR.html"
+                                  title='static vcx::utils::error::CREATE_PROOF_ERROR'>CREATE_PROOF_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CREDENTIAL_DEF_ALREADY_CREATED.html"
+                                  title='static vcx::utils::error::CREDENTIAL_DEF_ALREADY_CREATED'>CREDENTIAL_DEF_ALREADY_CREATED</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DUPLICATE_WALLET_RECORD.html"
+                                  title='static vcx::utils::error::DUPLICATE_WALLET_RECORD'>DUPLICATE_WALLET_RECORD</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.FAILED_PROOF_COMPLIANCE.html"
+                                  title='static vcx::utils::error::FAILED_PROOF_COMPLIANCE'>FAILED_PROOF_COMPLIANCE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INDY_DUPLICATE_WALLET_RECORD.html"
+                                  title='static vcx::utils::error::INDY_DUPLICATE_WALLET_RECORD'>INDY_DUPLICATE_WALLET_RECORD</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INDY_SUBMIT_REQUEST_ERR.html"
+                                  title='static vcx::utils::error::INDY_SUBMIT_REQUEST_ERR'>INDY_SUBMIT_REQUEST_ERR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INDY_WALLET_RECORD_NOT_FOUND.html"
+                                  title='static vcx::utils::error::INDY_WALLET_RECORD_NOT_FOUND'>INDY_WALLET_RECORD_NOT_FOUND</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INSUFFICIENT_TOKEN_AMOUNT.html"
+                                  title='static vcx::utils::error::INSUFFICIENT_TOKEN_AMOUNT'>INSUFFICIENT_TOKEN_AMOUNT</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_ATTRIBUTES_STRUCTURE.html"
+                                  title='static vcx::utils::error::INVALID_ATTRIBUTES_STRUCTURE'>INVALID_ATTRIBUTES_STRUCTURE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_CONFIGURATION.html"
+                                  title='static vcx::utils::error::INVALID_CONFIGURATION'>INVALID_CONFIGURATION</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_CONNECTION_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_CONNECTION_HANDLE'>INVALID_CONNECTION_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_CREDENTIAL_DEF_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_CREDENTIAL_DEF_HANDLE'>INVALID_CREDENTIAL_DEF_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_CREDENTIAL_DEF_JSON.html"
+                                  title='static vcx::utils::error::INVALID_CREDENTIAL_DEF_JSON'>INVALID_CREDENTIAL_DEF_JSON</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_CREDENTIAL_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_CREDENTIAL_HANDLE'>INVALID_CREDENTIAL_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_CREDENTIAL_JSON.html"
+                                  title='static vcx::utils::error::INVALID_CREDENTIAL_JSON'>INVALID_CREDENTIAL_JSON</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_CREDENTIAL_REQUEST.html"
+                                  title='static vcx::utils::error::INVALID_CREDENTIAL_REQUEST'>INVALID_CREDENTIAL_REQUEST</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_DID.html"
+                                  title='static vcx::utils::error::INVALID_DID'>INVALID_DID</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_DISCLOSED_PROOF_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_DISCLOSED_PROOF_HANDLE'>INVALID_DISCLOSED_PROOF_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_GENESIS_TXN_PATH.html"
+                                  title='static vcx::utils::error::INVALID_GENESIS_TXN_PATH'>INVALID_GENESIS_TXN_PATH</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_HTTP_RESPONSE.html"
+                                  title='static vcx::utils::error::INVALID_HTTP_RESPONSE'>INVALID_HTTP_RESPONSE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_INVITE_DETAILS.html"
+                                  title='static vcx::utils::error::INVALID_INVITE_DETAILS'>INVALID_INVITE_DETAILS</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_ISSUER_CREDENTIAL_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_ISSUER_CREDENTIAL_HANDLE'>INVALID_ISSUER_CREDENTIAL_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_JSON.html"
+                                  title='static vcx::utils::error::INVALID_JSON'>INVALID_JSON</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_KEY_DELEGATE.html"
+                                  title='static vcx::utils::error::INVALID_KEY_DELEGATE'>INVALID_KEY_DELEGATE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_LIBINDY_PARAM.html"
+                                  title='static vcx::utils::error::INVALID_LIBINDY_PARAM'>INVALID_LIBINDY_PARAM</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_MASTER_SECRET.html"
+                                  title='static vcx::utils::error::INVALID_MASTER_SECRET'>INVALID_MASTER_SECRET</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_MESSAGES.html"
+                                  title='static vcx::utils::error::INVALID_MESSAGES'>INVALID_MESSAGES</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_MSGPACK.html"
+                                  title='static vcx::utils::error::INVALID_MSGPACK'>INVALID_MSGPACK</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_NONCE.html"
+                                  title='static vcx::utils::error::INVALID_NONCE'>INVALID_NONCE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_OBJ_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_OBJ_HANDLE'>INVALID_OBJ_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_OPTION.html"
+                                  title='static vcx::utils::error::INVALID_OPTION'>INVALID_OPTION</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_PAYMENT.html"
+                                  title='static vcx::utils::error::INVALID_PAYMENT'>INVALID_PAYMENT</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_PAYMENT_ADDRESS.html"
+                                  title='static vcx::utils::error::INVALID_PAYMENT_ADDRESS'>INVALID_PAYMENT_ADDRESS</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_POOL_NAME.html"
+                                  title='static vcx::utils::error::INVALID_POOL_NAME'>INVALID_POOL_NAME</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_PREDICATE.html"
+                                  title='static vcx::utils::error::INVALID_PREDICATE'>INVALID_PREDICATE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_PROOF.html"
+                                  title='static vcx::utils::error::INVALID_PROOF'>INVALID_PROOF</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_PROOF_CREDENTIAL_DATA.html"
+                                  title='static vcx::utils::error::INVALID_PROOF_CREDENTIAL_DATA'>INVALID_PROOF_CREDENTIAL_DATA</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_PROOF_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_PROOF_HANDLE'>INVALID_PROOF_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_SCHEMA.html"
+                                  title='static vcx::utils::error::INVALID_SCHEMA'>INVALID_SCHEMA</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_SCHEMA_CREATION.html"
+                                  title='static vcx::utils::error::INVALID_SCHEMA_CREATION'>INVALID_SCHEMA_CREATION</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_SCHEMA_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_SCHEMA_HANDLE'>INVALID_SCHEMA_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_SCHEMA_SEQ_NO.html"
+                                  title='static vcx::utils::error::INVALID_SCHEMA_SEQ_NO'>INVALID_SCHEMA_SEQ_NO</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_SELF_ATTESTED_VAL.html"
+                                  title='static vcx::utils::error::INVALID_SELF_ATTESTED_VAL'>INVALID_SELF_ATTESTED_VAL</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_URL.html"
+                                  title='static vcx::utils::error::INVALID_URL'>INVALID_URL</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_VERKEY.html"
+                                  title='static vcx::utils::error::INVALID_VERKEY'>INVALID_VERKEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_WALLET_CREATION.html"
+                                  title='static vcx::utils::error::INVALID_WALLET_CREATION'>INVALID_WALLET_CREATION</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_WALLET_HANDLE.html"
+                                  title='static vcx::utils::error::INVALID_WALLET_HANDLE'>INVALID_WALLET_HANDLE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_WALLET_SETUP.html"
+                                  title='static vcx::utils::error::INVALID_WALLET_SETUP'>INVALID_WALLET_SETUP</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.INVALID_WALLET_STORAGE_PARAMETER.html"
+                                  title='static vcx::utils::error::INVALID_WALLET_STORAGE_PARAMETER'>INVALID_WALLET_STORAGE_PARAMETER</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.IOERROR.html"
+                                  title='static vcx::utils::error::IOERROR'>IOERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.LIBINDY_INVALID_STRUCTURE.html"
+                                  title='static vcx::utils::error::LIBINDY_INVALID_STRUCTURE'>LIBINDY_INVALID_STRUCTURE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.MISSING_BACKUP_KEY.html"
+                                  title='static vcx::utils::error::MISSING_BACKUP_KEY'>MISSING_BACKUP_KEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.MISSING_EXPORTED_WALLET_PATH.html"
+                                  title='static vcx::utils::error::MISSING_EXPORTED_WALLET_PATH'>MISSING_EXPORTED_WALLET_PATH</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.MISSING_WALLET_KEY.html"
+                                  title='static vcx::utils::error::MISSING_WALLET_KEY'>MISSING_WALLET_KEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.MISSING_WALLET_NAME.html"
+                                  title='static vcx::utils::error::MISSING_WALLET_NAME'>MISSING_WALLET_NAME</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.NOT_BASE58.html"
+                                  title='static vcx::utils::error::NOT_BASE58'>NOT_BASE58</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.NOT_READY.html"
+                                  title='static vcx::utils::error::NOT_READY'>NOT_READY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.NO_ENDPOINT.html"
+                                  title='static vcx::utils::error::NO_ENDPOINT'>NO_ENDPOINT</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.NO_PAYMENT_INFORMATION.html"
+                                  title='static vcx::utils::error::NO_PAYMENT_INFORMATION'>NO_PAYMENT_INFORMATION</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.NO_POOL_OPEN.html"
+                                  title='static vcx::utils::error::NO_POOL_OPEN'>NO_POOL_OPEN</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.OBJECT_CACHE_ERROR.html"
+                                  title='static vcx::utils::error::OBJECT_CACHE_ERROR'>OBJECT_CACHE_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.POST_MSG_FAILURE.html"
+                                  title='static vcx::utils::error::POST_MSG_FAILURE'>POST_MSG_FAILURE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.SERIALIZATION_ERROR.html"
+                                  title='static vcx::utils::error::SERIALIZATION_ERROR'>SERIALIZATION_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.SUCCESS.html"
+                                  title='static vcx::utils::error::SUCCESS'>SUCCESS</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.TIMEOUT_LIBINDY_ERROR.html"
+                                  title='static vcx::utils::error::TIMEOUT_LIBINDY_ERROR'>TIMEOUT_LIBINDY_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.UNKNOWN_ERROR.html"
+                                  title='static vcx::utils::error::UNKNOWN_ERROR'>UNKNOWN_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.UNKNOWN_LIBINDY_ERROR.html"
+                                  title='static vcx::utils::error::UNKNOWN_LIBINDY_ERROR'>UNKNOWN_LIBINDY_ERROR</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.UNKNOWN_TXN_TYPE.html"
+                                  title='static vcx::utils::error::UNKNOWN_TXN_TYPE'>UNKNOWN_TXN_TYPE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.WALLET_ALREADY_EXISTS.html"
+                                  title='static vcx::utils::error::WALLET_ALREADY_EXISTS'>WALLET_ALREADY_EXISTS</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.WALLET_ALREADY_OPEN.html"
+                                  title='static vcx::utils::error::WALLET_ALREADY_OPEN'>WALLET_ALREADY_OPEN</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.WALLET_NOT_FOUND.html"
+                                  title='static vcx::utils::error::WALLET_NOT_FOUND'>WALLET_NOT_FOUND</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.WALLET_RECORD_NOT_FOUND.html"
+                                  title='static vcx::utils::error::WALLET_RECORD_NOT_FOUND'>WALLET_RECORD_NOT_FOUND</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.error_c_message.html"
+                                  title='fn vcx::utils::error::error_c_message'>error_c_message</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.error_message.html"
+                                  title='fn vcx::utils::error::error_message'>error_message</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.error_string.html"
+                                  title='fn vcx::utils::error::error_string'>error_string</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.map_libindy_err.html"
+                                  title='fn vcx::utils::error::map_libindy_err'>map_libindy_err</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g. <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g. <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g. <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../../../";window.currentCrate = "vcx";</script><script src="../../../aliases.js"></script><script src="../../../main.js"></script><script defer src="../../../search-index.js"></script></body></html>

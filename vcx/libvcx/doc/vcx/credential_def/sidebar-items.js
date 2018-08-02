@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["create_new_credentialdef",""],["from_string",""],["get_cred_def_id",""],["get_payment_txn",""],["get_source_id",""],["is_valid_handle",""],["release",""],["release_all",""],["retrieve_credential_def",""],["to_string",""]],"struct":[["CredentialDef",""]]});

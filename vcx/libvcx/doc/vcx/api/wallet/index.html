@@ -1,0 +1,174 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `wallet` mod in crate `vcx`."><meta name="keywords" content="rust, rustlang, rust-lang, wallet"><title>vcx::api::wallet - Rust</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><p class='location'>Module wallet</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#functions">Functions</a></li></ul></div><p class='location'><a href='../../index.html'>vcx</a>::<wbr><a href='../index.html'>api</a></p><script>window.sidebarCurrent = {name: 'wallet', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='in-band'>Module <a href='../../index.html'>vcx</a>::<wbr><a href='../index.html'>api</a>::<wbr><a class="mod" href=''>wallet</a></span><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../../../src/vcx/api/wallet.rs.html#1-1021' title='goto source code'>[src]</a></span></h1><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.indy_add_wallet_record.html"
+                                  title='fn vcx::api::wallet::indy_add_wallet_record'>indy_add_wallet_record</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.indy_delete_wallet_record.html"
+                                  title='fn vcx::api::wallet::indy_delete_wallet_record'>indy_delete_wallet_record</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.indy_get_wallet_record.html"
+                                  title='fn vcx::api::wallet::indy_get_wallet_record'>indy_get_wallet_record</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.indy_update_wallet_record_value.html"
+                                  title='fn vcx::api::wallet::indy_update_wallet_record_value'>indy_update_wallet_record_value</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_add_record.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_add_record'>vcx_wallet_add_record</a></td>
+                           <td class='docblock-short'>
+                                <p>Adds a record to the wallet
+Assumes there is an open wallet.
+#Params</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_add_record_tags.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_add_record_tags'>vcx_wallet_add_record_tags</a></td>
+                           <td class='docblock-short'>
+                                <p>Adds tags to a record.
+Assumes there is an open wallet and that a type and id pair already exists.
+#Params</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_close_search.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_close_search'>vcx_wallet_close_search</a></td>
+                           <td class='docblock-short'>
+                                <p>Close a search</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_create_payment_address.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_create_payment_address'>vcx_wallet_create_payment_address</a></td>
+                           <td class='docblock-short'>
+                                <p>Add a payment address to the wallet</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_delete_record.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_delete_record'>vcx_wallet_delete_record</a></td>
+                           <td class='docblock-short'>
+                                <p>Deletes an existing record.
+Assumes there is an open wallet and that a type and id pair already exists.
+#Params</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_delete_record_tags.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_delete_record_tags'>vcx_wallet_delete_record_tags</a></td>
+                           <td class='docblock-short'>
+                                <p>Deletes tags from a record.
+Assumes there is an open wallet and that a type and id pair already exists.
+#Params</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_export.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_export'>vcx_wallet_export</a></td>
+                           <td class='docblock-short'>
+                                <p>Exports opened wallet</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_get_record.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_get_record'>vcx_wallet_get_record</a></td>
+                           <td class='docblock-short'>
+                                <p>Deletes an existing record.
+Assumes there is an open wallet and that a type and id pair already exists.
+#Params</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_get_token_info.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_get_token_info'>vcx_wallet_get_token_info</a></td>
+                           <td class='docblock-short'>
+                                <p>Get the total balance from all addresses contained in the configured wallet</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_import.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_import'>vcx_wallet_import</a></td>
+                           <td class='docblock-short'>
+                                <p>Creates a new secure wallet and then imports its content
+according to fields provided in import_config
+Cannot be used if wallet is already opened (Especially if vcx_init has already been used).</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_open_search.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_open_search'>vcx_wallet_open_search</a></td>
+                           <td class='docblock-short'>
+                                <p>Opens a storage search handle</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_search_next_records.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_search_next_records'>vcx_wallet_search_next_records</a></td>
+                           <td class='docblock-short'>
+                                <p>Fetch next records for wallet search.</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_send_tokens.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_send_tokens'>vcx_wallet_send_tokens</a></td>
+                           <td class='docblock-short'>
+                                <p>Send tokens to a specific address</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_update_record_tags.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_update_record_tags'>vcx_wallet_update_record_tags</a></td>
+                           <td class='docblock-short'>
+                                <p>Updates the value of a record already in the wallet.
+Assumes there is an open wallet and that a type and id pair already exists.
+#Params</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_update_record_value.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_update_record_value'>vcx_wallet_update_record_value</a></td>
+                           <td class='docblock-short'>
+                                <p>Updates the value of a record already in the wallet.
+Assumes there is an open wallet and that a type and id pair already exists.
+#Params</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.vcx_wallet_validate_payment_address.html"
+                                  title='fn vcx::api::wallet::vcx_wallet_validate_payment_address'>vcx_wallet_validate_payment_address</a></td>
+                           <td class='docblock-short'>
+                                <p>Validates a Payment address</p>
+
+                           </td>
+                       </tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g. <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g. <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g. <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../../../";window.currentCrate = "vcx";</script><script src="../../../aliases.js"></script><script src="../../../main.js"></script><script defer src="../../../search-index.js"></script></body></html>

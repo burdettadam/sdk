@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["create_address",""],["get_address_info",""],["get_ledger_fees",""],["get_wallet_token_info",""],["init_payments",""],["inputs",""],["list_addresses",""],["mint_tokens_and_set_fees",""],["outputs",""],["pay_a_payee",""],["pay_for_txn",""]],"struct":[["AddressInfo",""],["Output",""],["PaymentTxn",""],["UTXO",""],["WalletInfo",""]]});

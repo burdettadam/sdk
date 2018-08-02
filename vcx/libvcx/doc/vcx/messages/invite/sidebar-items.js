@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["parse_invitation_acceptance_details",""]],"struct":[["AcceptInvite",""],["InviteDetail",""],["KeyDlgProofPayload",""],["MsgCreateResponse",""],["MsgDetailResponse",""],["SendInvite",""],["SenderAgencyDetail",""],["SenderDetail",""]]});

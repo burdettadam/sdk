@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Errorcode",""],["ProofStateType",""],["VcxStateType",""]],"mod":[["connection",""],["credential",""],["credential_def",""],["disclosed_proof",""],["issuer_credential",""],["proof",""],["schema",""],["utils",""],["vcx",""],["wallet",""]],"struct":[["VcxStatus",""]]});

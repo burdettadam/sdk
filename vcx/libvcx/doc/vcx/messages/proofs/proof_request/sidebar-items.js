@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["AttrInfo",""],["Filter",""],["PredicateInfo",""],["ProofPredicates",""],["ProofRequestData",""],["ProofRequestMessage",""]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["api",""],["connection",""],["credential",""],["credential_def",""],["credential_request",""],["disclosed_proof",""],["error",""],["issuer_credential",""],["messages",""],["object_cache",""],["proof",""],["proof_compliance",""],["schema",""],["settings",""],["utils",""]]});

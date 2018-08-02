@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["receive",""]],"struct":[["Return_I32",""],["Return_I32_BIN",""],["Return_I32_BOOL",""],["Return_I32_I32",""],["Return_I32_OPTSTR_BIN",""],["Return_I32_STR",""],["Return_I32_STR_STR",""],["Return_I32_STR_STR_STR",""]]});

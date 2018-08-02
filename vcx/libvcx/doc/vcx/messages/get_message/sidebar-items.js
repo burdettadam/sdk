@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["download_messages",""],["get_connection_messages",""],["get_ref_msg",""]],"struct":[["ConnectionMessages",""],["DeliveryDetails",""],["GetConnectionMessagesResponse",""],["GetMessages",""],["GetMessagesResponse",""],["GetMsgResponse",""],["GetMsgType",""],["Message",""]]});

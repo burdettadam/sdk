@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["base",""],["connection",""],["cred_def",""],["credential",""],["issuer_cred",""],["messages",""],["payment",""],["proof",""],["schema",""],["wallet",""]],"trait":[["ToErrorCode",""]]});

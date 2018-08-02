@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["create_and_store_my_did",""],["get_local_verkey",""]]});

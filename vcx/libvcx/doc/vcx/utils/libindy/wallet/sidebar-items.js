@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["add_record",""],["close_wallet",""],["create_wallet",""],["delete_record",""],["delete_wallet",""],["export",""],["get_record",""],["get_wallet_handle",""],["import",""],["init_wallet",""],["open_wallet",""],["update_record_value",""]],"static":[["WALLET_HANDLE",""]]});

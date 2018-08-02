@@ -1,0 +1,346 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `settings` mod in crate `vcx`."><meta name="keywords" content="rust, rustlang, rust-lang, settings"><title>vcx::settings - Rust</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><p class='location'>Module settings</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#statics">Statics</a></li><li><a href="#functions">Functions</a></li></ul></div><p class='location'><a href='../index.html'>vcx</a></p><script>window.sidebarCurrent = {name: 'settings', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>vcx</a>::<wbr><a class="mod" href=''>settings</a></span><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../../src/vcx/settings.rs.html#1-469' title='goto source code'>[src]</a></span></h1><h2 id='statics' class='section-header'><a href="#statics">Statics</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_AGENCY_DID.html"
+                                  title='static vcx::settings::CONFIG_AGENCY_DID'>CONFIG_AGENCY_DID</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_AGENCY_ENDPOINT.html"
+                                  title='static vcx::settings::CONFIG_AGENCY_ENDPOINT'>CONFIG_AGENCY_ENDPOINT</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_AGENCY_VERKEY.html"
+                                  title='static vcx::settings::CONFIG_AGENCY_VERKEY'>CONFIG_AGENCY_VERKEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_ENABLE_TEST_MODE.html"
+                                  title='static vcx::settings::CONFIG_ENABLE_TEST_MODE'>CONFIG_ENABLE_TEST_MODE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_EXPORTED_WALLET_PATH.html"
+                                  title='static vcx::settings::CONFIG_EXPORTED_WALLET_PATH'>CONFIG_EXPORTED_WALLET_PATH</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_GENESIS_PATH.html"
+                                  title='static vcx::settings::CONFIG_GENESIS_PATH'>CONFIG_GENESIS_PATH</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_INSTITUTION_DID.html"
+                                  title='static vcx::settings::CONFIG_INSTITUTION_DID'>CONFIG_INSTITUTION_DID</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_INSTITUTION_LOGO_URL.html"
+                                  title='static vcx::settings::CONFIG_INSTITUTION_LOGO_URL'>CONFIG_INSTITUTION_LOGO_URL</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_INSTITUTION_NAME.html"
+                                  title='static vcx::settings::CONFIG_INSTITUTION_NAME'>CONFIG_INSTITUTION_NAME</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_INSTITUTION_VERKEY.html"
+                                  title='static vcx::settings::CONFIG_INSTITUTION_VERKEY'>CONFIG_INSTITUTION_VERKEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_LINK_SECRET_ALIAS.html"
+                                  title='static vcx::settings::CONFIG_LINK_SECRET_ALIAS'>CONFIG_LINK_SECRET_ALIAS</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_LOG_CONFIG.html"
+                                  title='static vcx::settings::CONFIG_LOG_CONFIG'>CONFIG_LOG_CONFIG</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_POOL_NAME.html"
+                                  title='static vcx::settings::CONFIG_POOL_NAME'>CONFIG_POOL_NAME</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_REMOTE_TO_SDK_DID.html"
+                                  title='static vcx::settings::CONFIG_REMOTE_TO_SDK_DID'>CONFIG_REMOTE_TO_SDK_DID</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_REMOTE_TO_SDK_VERKEY.html"
+                                  title='static vcx::settings::CONFIG_REMOTE_TO_SDK_VERKEY'>CONFIG_REMOTE_TO_SDK_VERKEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_SDK_TO_REMOTE_DID.html"
+                                  title='static vcx::settings::CONFIG_SDK_TO_REMOTE_DID'>CONFIG_SDK_TO_REMOTE_DID</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_SDK_TO_REMOTE_VERKEY.html"
+                                  title='static vcx::settings::CONFIG_SDK_TO_REMOTE_VERKEY'>CONFIG_SDK_TO_REMOTE_VERKEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_WALLET_BACKUP_KEY.html"
+                                  title='static vcx::settings::CONFIG_WALLET_BACKUP_KEY'>CONFIG_WALLET_BACKUP_KEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_WALLET_KEY.html"
+                                  title='static vcx::settings::CONFIG_WALLET_KEY'>CONFIG_WALLET_KEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_WALLET_NAME.html"
+                                  title='static vcx::settings::CONFIG_WALLET_NAME'>CONFIG_WALLET_NAME</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.CONFIG_WALLET_TYPE.html"
+                                  title='static vcx::settings::CONFIG_WALLET_TYPE'>CONFIG_WALLET_TYPE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_DEFAULT.html"
+                                  title='static vcx::settings::DEFAULT_DEFAULT'>DEFAULT_DEFAULT</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_DID.html"
+                                  title='static vcx::settings::DEFAULT_DID'>DEFAULT_DID</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_ENABLE_TEST_MODE.html"
+                                  title='static vcx::settings::DEFAULT_ENABLE_TEST_MODE'>DEFAULT_ENABLE_TEST_MODE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_EXPORTED_WALLET_PATH.html"
+                                  title='static vcx::settings::DEFAULT_EXPORTED_WALLET_PATH'>DEFAULT_EXPORTED_WALLET_PATH</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_GENESIS_PATH.html"
+                                  title='static vcx::settings::DEFAULT_GENESIS_PATH'>DEFAULT_GENESIS_PATH</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_LINK_SECRET_ALIAS.html"
+                                  title='static vcx::settings::DEFAULT_LINK_SECRET_ALIAS'>DEFAULT_LINK_SECRET_ALIAS</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_POOL_NAME.html"
+                                  title='static vcx::settings::DEFAULT_POOL_NAME'>DEFAULT_POOL_NAME</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_URL.html"
+                                  title='static vcx::settings::DEFAULT_URL'>DEFAULT_URL</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_VERKEY.html"
+                                  title='static vcx::settings::DEFAULT_VERKEY'>DEFAULT_VERKEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.DEFAULT_WALLET_NAME.html"
+                                  title='static vcx::settings::DEFAULT_WALLET_NAME'>DEFAULT_WALLET_NAME</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.MASK_VALUE.html"
+                                  title='static vcx::settings::MASK_VALUE'>MASK_VALUE</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.TEST_WALLET_KEY.html"
+                                  title='static vcx::settings::TEST_WALLET_KEY'>TEST_WALLET_KEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.UNINITIALIZED_BACKUP_KEY.html"
+                                  title='static vcx::settings::UNINITIALIZED_BACKUP_KEY'>UNINITIALIZED_BACKUP_KEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="static" href="static.UNINITIALIZED_WALLET_KEY.html"
+                                  title='static vcx::settings::UNINITIALIZED_WALLET_KEY'>UNINITIALIZED_WALLET_KEY</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.clear_config.html"
+                                  title='fn vcx::settings::clear_config'>clear_config</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.get_config_value.html"
+                                  title='fn vcx::settings::get_config_value'>get_config_value</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.get_wallet_credentials.html"
+                                  title='fn vcx::settings::get_wallet_credentials'>get_wallet_credentials</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.log_settings.html"
+                                  title='fn vcx::settings::log_settings'>log_settings</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.process_config_file.html"
+                                  title='fn vcx::settings::process_config_file'>process_config_file</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.process_config_string.html"
+                                  title='fn vcx::settings::process_config_string'>process_config_string</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.read_config_file.html"
+                                  title='fn vcx::settings::read_config_file'>read_config_file</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.remove_file_if_exists.html"
+                                  title='fn vcx::settings::remove_file_if_exists'>remove_file_if_exists</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.set_config_value.html"
+                                  title='fn vcx::settings::set_config_value'>set_config_value</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.set_defaults.html"
+                                  title='fn vcx::settings::set_defaults'>set_defaults</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.test_agency_mode_enabled.html"
+                                  title='fn vcx::settings::test_agency_mode_enabled'>test_agency_mode_enabled</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.test_indy_mode_enabled.html"
+                                  title='fn vcx::settings::test_indy_mode_enabled'>test_indy_mode_enabled</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.validate_config.html"
+                                  title='fn vcx::settings::validate_config'>validate_config</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.write_config_to_file.html"
+                                  title='fn vcx::settings::write_config_to_file'>write_config_to_file</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g. <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g. <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g. <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../../";window.currentCrate = "vcx";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script defer src="../../search-index.js"></script></body></html>

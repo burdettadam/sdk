@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["parse_msg_uid",""]],"struct":[["CreateMessagePayload",""],["MessageDetailPayload",""],["SendMessage",""],["SendMessageResponse",""]]});

@@ -1,131 +1,46 @@
 extern crate libc;
+extern crate serde_json;
 
-use self::libc::c_char;
-use std::ffi::CString;
 use settings;
-use std::ptr::null;
-use utils::libindy::{indy_function_eval};
-use utils::libindy::return_types::{ Return_I32, Return_I32_I32, receive};
-use utils::libindy::error_codes::{map_indy_error_code, map_string_error};
-use utils::timeout::TimeoutUtils;
+use utils::libindy::error_codes::map_rust_indy_sdk_error_code;
 use utils::error;
-
+use error::wallet::WalletError;
+use indy::wallet::Wallet;
+use indy::ErrorCode;
+use std::path::Path;
 pub static mut WALLET_HANDLE: i32 = 0;
-
-extern {
-    fn indy_create_wallet(command_handle: i32,
-                          pool_name: *const c_char,
-                          name: *const c_char,
-                          xtype: *const c_char,
-                          config: *const c_char,
-                          credentials: *const c_char,
-                          cb: Option<extern fn(xcommand_handle: i32, err: i32)>) -> i32;
-
-    fn indy_open_wallet(command_handle: i32,
-                        name: *const c_char,
-                        runtime_config: *const c_char,
-                        credentials: *const c_char,
-                        cb: Option<extern fn(xcommand_handle: i32, err: i32, handle: i32)>) -> i32;
-
-    fn indy_close_wallet(command_handle: i32,
-                         handle: i32,
-                         cb: Option<extern fn(xcommand_handle: i32, err: i32)>) -> i32;
-
-    fn indy_delete_wallet(command_handle: i32,
-                          name: *const c_char,
-                          credentials: *const c_char,
-                          cb: Option<extern fn(xcommand_handle: i32, err: i32)>) -> i32;
-
-    fn indy_create_and_store_my_did(command_handle: i32,
-                                    wallet_handle: i32,
-                                    did_json: *const c_char,
-                                    cb: Option<extern fn(xcommand_handle: i32, err: i32,
-                                                         did: *const c_char,
-                                                         verkey: *const c_char,
-                                                         pk: *const c_char)>) -> i32;
-
-    fn indy_store_their_did(command_handle: i32,
-                            wallet_handle: i32,
-                            identity_json: *const c_char,
-                            cb: Option<extern fn(xcommand_handle: i32, err: i32)>) -> i32;
-}
 
 pub fn get_wallet_handle() -> i32 { unsafe { WALLET_HANDLE } }
 
-pub fn create_wallet(wallet_name: &str, pool_name: &str) -> Result<(), u32> {
-    let create_obj = Return_I32::new()?;
-    let xtype = Some("default");
-    let c_pool_name = CString::new(pool_name).unwrap();
-    let c_wallet_name = CString::new(wallet_name).unwrap();
-    let c_xtype_str = xtype.map(|s| CString::new(s).unwrap()).unwrap_or(CString::new("").unwrap());
-    let credential_str = CString::new(settings::get_wallet_credentials()).unwrap();
+pub fn create_wallet(wallet_name: &str) -> Result<(), u32> {
+    trace!("creating wallet: {}", wallet_name);
 
-    unsafe {
-        let err = indy_create_wallet(create_obj.command_handle,
-                                     c_pool_name.as_ptr(),
-                                     c_wallet_name.as_ptr(),
-                                     if xtype.is_some() { c_xtype_str.as_ptr() } else { null() },
-                                     null(),
-                                     credential_str.as_ptr(),
-                                     Some(create_obj.get_callback()));
+    let config = format!(r#"{{"id":"{}"}}"#, wallet_name);
 
-        if err != 203 && err != 0 {
-            warn!("libindy create wallet returned: {}", err);
-            return Err(error::UNKNOWN_LIBINDY_ERROR.code_num);
-        }
-        match receive(&create_obj.receiver, TimeoutUtils::some_long()) {
-            Ok(_) => {
-                if err != 203 && err != 0 {
-                    warn!("libindy open wallet returned: {}", err);
-                    return Err(error::UNKNOWN_LIBINDY_ERROR.code_num)
-                }
-                Ok(())
-            }
-            Err(err) => return Err(error::UNKNOWN_LIBINDY_ERROR.code_num),
+    match Wallet::create(&config, &settings::get_wallet_credentials()) {
+        Ok(x) => Ok(()),
+        Err(x) => if x != ErrorCode::WalletAlreadyExistsError && x != ErrorCode::Success {
+            warn!("could not create wallet {}: {:?}", wallet_name, x);
+            Err(error::UNKNOWN_LIBINDY_ERROR.code_num)
+        } else {
+            warn!("could not create wallet {}: {:?}", wallet_name, x);
+            Ok(())
         }
     }
 }
 
 pub fn open_wallet(wallet_name: &str) -> Result<i32, u32> {
+    trace!("opening wallet: {}", wallet_name);
     if settings::test_indy_mode_enabled() {
         unsafe {WALLET_HANDLE = 1;}
         return Ok(1);
     }
 
-    let open_obj = Return_I32_I32::new()?;
+    let config = format!(r#"{{"id":"{}"}}"#, wallet_name);
 
-    unsafe {
-        let open_obj = Return_I32_I32::new()?;
-
-        let wallet_name = CString::new(wallet_name).unwrap();
-        let credential_str = CString::new(settings::get_wallet_credentials()).unwrap();
-
-        // Open Wallet
-        let err = indy_open_wallet(open_obj.command_handle,
-                                   wallet_name.as_ptr(),
-                                   null(),
-                                   credential_str.as_ptr(),
-                                   Some(open_obj.get_callback()));
-
-        if err != 206 && err != 0 {
-            warn!("libindy open wallet returned: {}", err);
-            return Err(error::UNKNOWN_LIBINDY_ERROR.code_num);
-        }
-
-        let wallet_handle = match receive(&open_obj.receiver, TimeoutUtils::some_long()) {
-            Ok((err, handle)) => {
-                if err != 206 && err != 0 {
-                    warn!("libindy open wallet returned: {}", err);
-                    return Err(error::UNKNOWN_LIBINDY_ERROR.code_num);
-                }
-                handle
-            }
-            Err(err) => return Err(error::UNKNOWN_LIBINDY_ERROR.code_num),
-        };
-
-        WALLET_HANDLE = wallet_handle;
-        Ok(wallet_handle)
-    }
+    let handle = Wallet::open(&config, &settings::get_wallet_credentials()).map_err(map_rust_indy_sdk_error_code)?;
+    unsafe { WALLET_HANDLE = handle; }
+    Ok(handle)
 }
 
 pub fn init_wallet(wallet_name: &str) -> Result<i32, u32> {
@@ -134,40 +49,18 @@ pub fn init_wallet(wallet_name: &str) -> Result<i32, u32> {
         return Ok(1);
     }
 
-    let pool_name = match settings::get_config_value(settings::CONFIG_POOL_NAME) {
-        Ok(x) => x,
-        Err(_) => "pool1".to_owned(),
-    };
-
-    let wallet_type = match settings::get_config_value(settings::CONFIG_WALLET_TYPE) {
-        Ok(x) => x,
-        Err(_) => "default".to_owned(),
-    };
-    let use_key = false;
-
-
-    let c_pool_name = CString::new(pool_name.clone()).map_err(map_string_error)?;
-    let c_wallet_name = CString::new(wallet_name).map_err(map_string_error)?;
-    let xtype = CString::new("default").map_err(map_string_error)?;
-
-    create_wallet(wallet_name, &pool_name)?;
+    create_wallet(wallet_name)?;
     open_wallet(wallet_name)
 }
 
 pub fn close_wallet() -> Result<(), u32> {
-    if settings::test_indy_mode_enabled() { return Ok(()) }
-    let rtn_obj = Return_I32::new()?;
-
-    unsafe {
-        indy_function_eval(
-            indy_close_wallet(rtn_obj.command_handle,
-                              WALLET_HANDLE,
-                             Some(rtn_obj.get_callback()))
-        ).map_err(map_indy_error_code)?;
-        WALLET_HANDLE = 0;
+    if settings::test_indy_mode_enabled() {
+        unsafe { WALLET_HANDLE = 0; }
+        return Ok(());
     }
-
-    rtn_obj.receive(TimeoutUtils::some_long())
+    let result = Wallet::close(get_wallet_handle()).map_err(map_rust_indy_sdk_error_code);
+    unsafe { WALLET_HANDLE = 0; }
+    result
 }
 
 pub fn delete_wallet(wallet_name: &str) -> Result<(), u32> {
@@ -176,37 +69,77 @@ pub fn delete_wallet(wallet_name: &str) -> Result<(), u32> {
         return Ok(())
     }
 
-    let rtn_obj = Return_I32::new()?;
-    let wallet_name = CString::new(wallet_name).map_err(map_string_error)?;
-    let credentials =  CString::new(settings::get_wallet_credentials()).unwrap();
+    match close_wallet() {
+        Ok(_) => (),
+        Err(x) => (),
+    };
 
-    unsafe {
-        indy_function_eval(
-            indy_delete_wallet(rtn_obj.command_handle,
-                               wallet_name.as_ptr(),
-                               credentials.as_ptr(),
-                               Some(rtn_obj.get_callback()))
-        ).map_err(map_indy_error_code)?;
-    }
-    rtn_obj.receive(TimeoutUtils::some_long())
+    let config = format!(r#"{{"id":"{}"}}"#, wallet_name);
+
+    Wallet::delete(&config,&settings::get_wallet_credentials()).map_err(map_rust_indy_sdk_error_code)
 }
 
-pub fn store_their_did(identity_json: &str) -> Result<(), u32> {
+pub fn add_record(xtype: &str, id: &str, value: &str, tags: &str) -> Result<(), u32> {
+    if settings::test_indy_mode_enabled() { return Ok(()) }
 
-    let identity_json = CString::new(identity_json.to_string()).map_err(map_string_error)?;
-    let wallet_handle = get_wallet_handle();
+    Wallet::add_record(get_wallet_handle(), xtype, id, value, Some(tags))
+        .map_err(map_rust_indy_sdk_error_code)
+}
 
-    let rtn_obj = Return_I32::new()?;
 
-    unsafe {
-        indy_function_eval(
-            indy_store_their_did(rtn_obj.command_handle,
-                                 wallet_handle,
-                                 identity_json.as_ptr(),
-                                 Some(rtn_obj.get_callback()))
-        ).map_err(map_indy_error_code)?;
+pub fn get_record(xtype: &str, id: &str, options: &str) -> Result<String, u32> {
+    if settings::test_indy_mode_enabled() {
+        return Ok(r#"{"id":"123","type":"record type","value":"record value","tags":null}"#.to_string())
     }
-    rtn_obj.receive(TimeoutUtils::some_long())
+
+    Wallet::get_record(get_wallet_handle(), xtype, id, options)
+        .map_err(map_rust_indy_sdk_error_code)
+}
+
+pub fn delete_record(xtype: &str, id: &str) -> Result<(), u32> {
+    if settings::test_indy_mode_enabled() { return Ok(()) }
+    Wallet::delete_record(get_wallet_handle(), xtype, id)
+        .map_err(map_rust_indy_sdk_error_code)
+}
+
+
+pub fn update_record_value(xtype: &str, id: &str, value: &str) -> Result<(), u32> {
+    if settings::test_indy_mode_enabled() { return Ok(()) }
+    Wallet::update_record_value(get_wallet_handle(), xtype, id, value)
+        .map_err(map_rust_indy_sdk_error_code)
+}
+
+pub fn export(wallet_handle: i32, path: &Path, backup_key: &str) -> Result<(), WalletError> {
+    let export_config = json!({ "key": backup_key, "path": &path}).to_string();
+    match Wallet::export(wallet_handle, &export_config) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(WalletError::CommonError(map_rust_indy_sdk_error_code(e))),
+    }
+}
+
+pub fn import(config: &str) -> Result<(), WalletError> {
+    settings::process_config_string(config).map_err(|e| WalletError::CommonError(e))?;
+
+    let key = settings::get_config_value(settings::CONFIG_WALLET_KEY)
+        .map_err(|e| WalletError::CommonError(e))?;
+
+    let name = settings::get_config_value(settings::CONFIG_WALLET_NAME)
+        .map_err(|e| WalletError::CommonError(error::MISSING_WALLET_NAME.code_num))?;
+
+    let exported_wallet_path = settings::get_config_value(settings::CONFIG_EXPORTED_WALLET_PATH)
+        .or(Err(WalletError::CommonError(error::MISSING_EXPORTED_WALLET_PATH.code_num)))?;
+
+    let backup_key = settings::get_config_value(settings::CONFIG_WALLET_BACKUP_KEY)
+        .or(Err(WalletError::CommonError(error::MISSING_BACKUP_KEY.code_num)))?;
+
+    let credentials = json!({"key": key, "storage":"{}"}).to_string();
+    let import_config = json!({"key": backup_key, "path": exported_wallet_path }).to_string();
+    let config = format!(r#"{{"id":"{}"}}"#, name);
+
+    match Wallet::import(&config, &credentials, &import_config) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(WalletError::CommonError(map_rust_indy_sdk_error_code(e))),
+    }
 }
 
 #[cfg(test)]
@@ -215,7 +148,34 @@ pub mod tests {
     use utils::error;
     use std::thread;
     use std::time::Duration;
-    use utils::libindy::signus::SignusUtils;
+    use utils::devsetup::tests::setup_wallet_env;
+    use std::{fs, env};
+
+    pub fn export_test_wallet() -> ::std::path::PathBuf {
+        let filename_str = &settings::get_config_value(settings::CONFIG_WALLET_NAME).unwrap();
+        let mut dir = env::temp_dir();
+        dir.push(filename_str);
+        if Path::new(&dir).exists() {
+            fs::remove_file(Path::new(&dir)).unwrap();
+        }
+
+        let wallet_name = settings::get_config_value(settings::CONFIG_WALLET_NAME).unwrap();
+        let backup_key = settings::get_config_value(settings::CONFIG_WALLET_BACKUP_KEY).unwrap();
+        let handle = setup_wallet_env(&wallet_name).unwrap();
+
+        let xtype = "type1";
+        let id = "id1";
+        let value = "value1";
+        add_record(xtype, id, value, "{}").unwrap();
+
+        export(handle, &dir, &backup_key).unwrap();
+        dir
+    }
+
+    pub fn delete_import_wallet_path(dir: ::std::path::PathBuf) {
+        fs::remove_file(Path::new(&dir)).unwrap();
+        assert!(!Path::new(&dir).exists());
+    }
 
     #[test]
     fn test_wallet() {
@@ -239,14 +199,315 @@ pub mod tests {
     }
 
     #[test]
-    fn test_wallet_with_credentials() {
+    fn test_wallet_import_export() {
+
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "false");
+        let wallet_name = settings::get_config_value(settings::CONFIG_WALLET_NAME).unwrap();
+        let exported_path = format!(r#"/tmp/{}"#, wallet_name);
+        let wallet_key = settings::get_config_value(settings::CONFIG_WALLET_KEY).unwrap();
+        let backup_key = settings::get_config_value(settings::CONFIG_WALLET_BACKUP_KEY).unwrap();
+
+        let dir = export_test_wallet();
+        let xtype = "type1";
+        let id = "id1";
+        let value = "value1";
+        let options = "{}";
+
+        ::api::vcx::vcx_shutdown(true);
+
+        let import_config = json!({
+            settings::CONFIG_WALLET_NAME: wallet_name,
+            settings::CONFIG_WALLET_KEY: wallet_key,
+            settings::CONFIG_EXPORTED_WALLET_PATH: exported_path,
+            settings::CONFIG_WALLET_BACKUP_KEY: backup_key,
+        }).to_string();
+        import(&import_config).unwrap();
+        open_wallet(&wallet_name).unwrap();
+
+        // If wallet was successfully imported, there will be an error trying to add this duplicate record
+        assert_eq!(add_record(xtype, id, value, "{}"), Err(error::DUPLICATE_WALLET_RECORD.code_num));
+        thread::sleep(Duration::from_secs(1));
+        ::api::vcx::vcx_shutdown(true);
+        delete_import_wallet_path(dir);
+    }
+
+    #[test]
+    fn test_import_fails_with_missing_configs() {
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+        ::api::vcx::vcx_shutdown(true);
+
+        // Invalid json
+        assert_eq!(import(""), Err(WalletError::CommonError(error::INVALID_JSON.code_num)));
+        let mut config = json!({});
+
+        // Missing wallet_key
+        assert_eq!(import(&config.to_string()), Err(WalletError::CommonError(error::MISSING_WALLET_KEY.code_num)));
+        config[settings::CONFIG_WALLET_KEY] = serde_json::to_value("wallet_key1").unwrap();
+
+        // Missing wallet name
+        assert_eq!(import(&config.to_string()), Err(WalletError::CommonError(error::MISSING_WALLET_NAME.code_num)));
+        config[settings::CONFIG_WALLET_NAME] = serde_json::to_value("wallet_name1").unwrap();
+
+        // Missing exported_wallet_path
+        assert_eq!(import(&config.to_string()), Err(WalletError::CommonError(error::MISSING_EXPORTED_WALLET_PATH.code_num)));
+        config[settings::CONFIG_EXPORTED_WALLET_PATH] = serde_json::to_value(settings::DEFAULT_EXPORTED_WALLET_PATH).unwrap();
+
+        // Missing backup_key
+        assert_eq!(import(&config.to_string()), Err(WalletError::CommonError(error::MISSING_BACKUP_KEY.code_num)));
+
+    }
+
+    #[test]
+    fn test_import_wallet_fails_with_existing_wallet() {
+        settings::set_defaults();
+        let wallet_name = "test_import_wallet_fails_with_existing_wallet";
+        settings::set_config_value(settings::CONFIG_WALLET_NAME, wallet_name);
+        let exported_path = format!(r#"/tmp/{}"#, wallet_name);
+        let wallet_key = settings::get_config_value(settings::CONFIG_WALLET_KEY).unwrap();
+        let backup_key = settings::get_config_value(settings::CONFIG_WALLET_BACKUP_KEY).unwrap();
+
+        let dir = export_test_wallet();
+
+        let import_config = json!({
+            settings::CONFIG_WALLET_NAME: wallet_name,
+            settings::CONFIG_WALLET_KEY: wallet_key,
+            settings::CONFIG_EXPORTED_WALLET_PATH: exported_path,
+            settings::CONFIG_WALLET_BACKUP_KEY: backup_key,
+        }).to_string();
+        assert_eq!(import(&import_config), Err(WalletError::CommonError(error::WALLET_ALREADY_EXISTS.code_num)));
+
+        ::api::vcx::vcx_shutdown(true);
+        delete_import_wallet_path(dir);
+    }
+
+    #[test]
+    fn test_import_wallet_fails_with_invalid_path(){
+        settings::set_defaults();
+        let wallet_name = "test_import_wallet_fails_with_invalid_path";
+        settings::set_config_value(settings::CONFIG_WALLET_NAME, wallet_name);
+        let exported_path = format!(r#"/tmp/{}"#, wallet_name);
+        let wallet_key = settings::get_config_value(settings::CONFIG_WALLET_KEY).unwrap();
+        let backup_key = settings::get_config_value(settings::CONFIG_WALLET_BACKUP_KEY).unwrap();
+
+        let dir = export_test_wallet();
+
+        let import_config = json!({
+            settings::CONFIG_WALLET_NAME: wallet_name,
+            settings::CONFIG_WALLET_KEY: wallet_key,
+            settings::CONFIG_EXPORTED_WALLET_PATH: "DIFFERENT_PATH",
+            settings::CONFIG_WALLET_BACKUP_KEY: backup_key,
+        }).to_string();
+        assert_eq!(import(&import_config), Err(WalletError::CommonError(error::IOERROR.code_num)));
+
+        ::api::vcx::vcx_shutdown(true);
+        delete_import_wallet_path(dir);
+    }
+
+    #[test]
+    fn test_import_wallet_fails_with_invalid_backup_key() {
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "false");
+        settings::set_defaults();
+
+        let wallet_name = "test_import_wallet_fails_with_invalid_backup_key";
+        let exported_path = format!(r#"/tmp/{}"#, wallet_name);
+        let wallet_key = settings::get_config_value(settings::CONFIG_WALLET_KEY).unwrap();
+        let backup_key1 = "123";
+        let backup_key2 = "456";
+        settings::set_config_value(settings::CONFIG_WALLET_NAME, wallet_name);
+        settings::set_config_value(settings::CONFIG_WALLET_BACKUP_KEY, backup_key1);
+
+        let dir = export_test_wallet();
+        ::api::vcx::vcx_shutdown(true);
+
+        let import_config = json!({
+            settings::CONFIG_WALLET_NAME: wallet_name,
+            settings::CONFIG_WALLET_KEY: wallet_key,
+            settings::CONFIG_EXPORTED_WALLET_PATH: exported_path,
+            settings::CONFIG_WALLET_BACKUP_KEY: backup_key2,
+        }).to_string();
+        assert_eq!(import(&import_config), Err(WalletError::CommonError(error::LIBINDY_INVALID_STRUCTURE.code_num)));
+
+        ::api::vcx::vcx_shutdown(true);
+        delete_import_wallet_path(dir);
+    }
+
+    #[test]
+    fn test_add_new_record_with_no_tag() {
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
-        settings::set_config_value(settings::CONFIG_WALLET_KEY,"pass");
 
-        let handle = init_wallet("password_wallet").unwrap();
+        let record = "Record Value";
+        let record_type = "Type";
+        let id = "123";
+        let wallet_n = "test_add_new_record_with_no_tag";
 
-        SignusUtils::create_and_store_my_did(handle,None).unwrap();
-        delete_wallet("password_wallet").unwrap();
+        init_wallet(wallet_n).unwrap();
+        add_record(record_type, id, record, "{}").unwrap();
+        delete_wallet(wallet_n).unwrap();
+    }
+
+    #[test]
+    fn test_add_duplicate_record_fails() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+
+        let record = "Record Value";
+        let record_type = "Type";
+        let id = "123";
+        let wallet_n = "test_add_duplicate_record_fails";
+
+        init_wallet(wallet_n).unwrap();
+        add_record(record_type, id, record, "{}").unwrap();
+        let rc = add_record(record_type, id, record, "{}");
+        assert_eq!(rc, Err(error::DUPLICATE_WALLET_RECORD.code_num));
+        delete_wallet(wallet_n).unwrap();
+
+    }
+
+    #[test]
+    fn test_add_record_with_same_id_but_different_type_success() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+
+        let record = "Record Value";
+        let record_type = "Type";
+        let record_type2 = "Type2";
+        let id = "123";
+        let wallet_n = "test_add_duplicate_record_fails";
+
+        init_wallet(wallet_n).unwrap();
+        add_record(record_type, id, record, "{}").unwrap();
+        add_record(record_type2, id, record, "{}").unwrap();
+        delete_wallet(wallet_n).unwrap();
+
+    }
+
+    #[test]
+    fn test_retrieve_missing_record_fails() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+
+        let record_type = "Type";
+        let id = "123";
+        let options = json!({
+            "retrieveType": false,
+            "retrieveValue": false,
+            "retrieveTags": false
+        }).to_string();
+        let wallet_n = "test_retrieve_missing_record_fails";
+
+        init_wallet(wallet_n).unwrap();
+        let rc = get_record(record_type, id, &options);
+        assert_eq!(rc, Err(error::WALLET_RECORD_NOT_FOUND.code_num));
+        delete_wallet(wallet_n).unwrap();
+
+    }
+
+    #[test]
+    fn test_retrieve_record_success() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+
+        let record = "Record Value";
+        let record_type = "Type";
+        let id = "123";
+        let wallet_n = "test_retrieve_record_success";
+        let options = json!({
+            "retrieveType": true,
+            "retrieveValue": true,
+            "retrieveTags": false
+        }).to_string();
+        let expected_retrieved_record = format!(r#"{{"type":"{}","id":"{}","value":"{}","tags":null}}"#, record_type, id, record);
+
+        init_wallet(wallet_n).unwrap();
+        add_record(record_type, id, record, "{}").unwrap();
+        let retrieved_record = get_record(record_type, id, &options).unwrap();
+        delete_wallet(wallet_n).unwrap();
+
+        assert_eq!(retrieved_record, expected_retrieved_record);
+    }
+
+    #[test]
+    fn test_delete_record_fails_with_no_record() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+        let wallet_n = "test_delete_record_fails_with_no_record";
+        let record_type = "Type";
+        let id = "123";
+
+        init_wallet(wallet_n).unwrap();
+        let rc = delete_record(record_type, id);
+        assert_eq!(rc, Err(error::WALLET_RECORD_NOT_FOUND.code_num));
+
+    }
+
+    #[test]
+    fn test_delete_record_success() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+
+        let record = "Record Value";
+        let record_type = "Type";
+        let id = "123";
+        let wallet_n = "test_delete_record_success";
+        let options = json!({
+            "retrieveType": true,
+            "retrieveValue": true,
+            "retrieveTags": false
+        }).to_string();
+
+        init_wallet(wallet_n).unwrap();
+        add_record(record_type, id, record, "{}").unwrap();
+        delete_record(record_type, id).unwrap();
+        let rc = get_record(record_type, id, &options);
+        assert_eq!(rc, Err(error::WALLET_RECORD_NOT_FOUND.code_num));
+        delete_wallet(wallet_n).unwrap();
+
+    }
+
+    #[test]
+    fn test_update_record_value_fails_with_no_initial_record() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+
+        let record = "Record Value";
+        let record_type = "Type";
+        let id = "123";
+        let wallet_n = "test_update_record_value_fails_with_no_initial_record";
+
+        init_wallet(wallet_n).unwrap();
+        let rc = update_record_value(record_type, id, record);
+        assert_eq!(rc, Err(error::WALLET_RECORD_NOT_FOUND.code_num));
+        delete_wallet(wallet_n).unwrap();
+    }
+
+    #[test]
+    fn test_update_record_value_success() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
+
+        let initial_record = "Record1";
+        let changed_record = "Record2";
+        let record_type = "Type";
+        let id = "123";
+        let wallet_n = "test_update_record_value_success";
+        let options = json!({
+            "retrieveType": true,
+            "retrieveValue": true,
+            "retrieveTags": false
+        }).to_string();
+        let expected_initial_record = format!(r#"{{"type":"{}","id":"{}","value":"{}","tags":null}}"#, record_type, id, initial_record);
+        let expected_updated_record = format!(r#"{{"type":"{}","id":"{}","value":"{}","tags":null}}"#, record_type, id, changed_record);
+
+        init_wallet(wallet_n).unwrap();
+        add_record(record_type, id, initial_record, "{}").unwrap();
+        let initial_record = get_record(record_type, id, &options).unwrap();
+        update_record_value(record_type, id, changed_record).unwrap();
+        let changed_record = get_record(record_type, id, &options).unwrap();
+        delete_wallet(wallet_n).unwrap();
+
+        assert_eq!(initial_record, expected_initial_record);
+        assert_eq!(changed_record, expected_updated_record);
     }
 }

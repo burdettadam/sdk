@@ -16,24 +16,7 @@ extern crate libc;
 
 use settings;
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
-use std::fmt;
 use std::sync::Mutex;
-use std::path::Path;
-
-use utils::error;
-
-pub enum SigTypes {
-    CL
-}
-
-impl fmt::Display for SigTypes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let str_val = match *self {
-            SigTypes::CL => "CL"
-        };
-        write!(f, "{}", str_val)
-    }
-}
 
 lazy_static!{
     static ref NEXT_LIBINDY_RC: Mutex<Vec<i32>> = Mutex::new(vec![]);
@@ -53,94 +36,44 @@ fn next_u32_command_handle() -> u32 {
     (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as u32
 }
 
-//Maps i32 return code to Result<(), i32>. The mapping is simple, 0 is Ok
-// and all other values are an Err.
-fn indy_function_eval(err: i32) -> Result<(), i32> {
-    if err != 0 {
-        Err(err)
-    }
-    else {
-        Ok(())
-    }
-}
-
-fn check_str(str_opt: Option<String>) -> Result<String, u32>{
-    match str_opt {
-        Some(str) => Ok(str),
-        None => {
-            warn!("libindy did not return a string");
-            return Err(error::UNKNOWN_LIBINDY_ERROR.code_num)
-        }
-    }
-}
-
-pub fn init_pool_and_wallet() -> Result<(), u32>  {
+pub fn init_pool() -> Result<(), u32>  {
     if settings::test_indy_mode_enabled() {return Ok (()); }
 
     let pool_name = settings::get_config_value(settings::CONFIG_POOL_NAME)
         .unwrap_or(settings::DEFAULT_POOL_NAME.to_string());
 
-    let wallet_name = settings::get_config_value(settings::CONFIG_WALLET_NAME)
-        .unwrap_or(settings::DEFAULT_WALLET_NAME.to_string());
+    let path: String = settings::get_config_value(settings::CONFIG_GENESIS_PATH)?;
 
-    let path: String = settings::get_config_value(settings::CONFIG_GENESIS_PATH)
-        .unwrap_or(settings::DEFAULT_GENESIS_PATH.to_string());
-
-    debug!("opening pool {} with genesis_path: {}", pool_name, path);
-    let option_path = Some(Path::new(&path));
-    match pool::create_pool_ledger_config(&pool_name, option_path.to_owned()) {
+    trace!("opening pool {} with genesis_path: {}", pool_name, path);
+    match pool::create_pool_ledger_config(&pool_name, &path) {
         Err(e) => {
             warn!("Pool Config Creation Error: {}", e);
             return Err(e);
         },
         Ok(_) => {
             debug!("Pool Config Created Successfully");
-            match pool::open_pool_ledger(&pool_name, None) {
-                Err(e) => {
-                    warn!("Open Pool Error: {}", e);
-                    return Err(e);
-                },
-                Ok(handle) => {
-                    debug!("Open Pool Successful");
-                }
-            }
+            pool::open_pool_ledger(&pool_name, None)?;
+            Ok(())
         }
     }
-
-    match wallet::open_wallet(&wallet_name) {
-        Err(e) => {
-            warn!("Init Wallet Error {}.", e);
-            return Err(error::UNKNOWN_LIBINDY_ERROR.code_num);
-        },
-        Ok(_) => {
-            debug!("Init Wallet Successful");
-        },
-    };
-
-    Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[test]
-    fn test_indy_function_eval() {
-        assert!(indy_function_eval(0).is_ok());
-        assert!(indy_function_eval(-1).is_err());
-        assert!(indy_function_eval(1).is_err());
-    }
 
     #[cfg(feature = "pool_tests")]
     #[test]
     fn test_init_pool_and_wallet() {
+        use super::*;
+
         let wallet_name = "test_init_pool_and_wallet";
         // make sure there's a valid wallet and pool before trying to use them.
         ::utils::devsetup::tests::setup_ledger_env(wallet_name);
         wallet::close_wallet().unwrap();
         pool::close().unwrap();
-        init_pool_and_wallet().unwrap();
+        init_pool().unwrap();
+        wallet::init_wallet(wallet_name).unwrap();
+
         ::utils::devsetup::tests::cleanup_dev_env(wallet_name);
     }
 }

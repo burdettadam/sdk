@@ -5,6 +5,25 @@ def vcx_python
 def libindy
 def vcx_nodejs
 
+// ******** Artifacts Created ********
+// libvcx_<ver>.deb (Debian Installable Library) ----> published Debian to https://repo.corp.evernym.com/deb/pool/main/libv/libvcx/
+// vcx_<ver>.deb (Nodejs Wrapper Debian Package) ----> archived with Jenkins and Published to repo.corp.evernym.com/deb/pool
+// vcx_<ver>.tgz (Nodejs Wrapper Npm Installable Package) ----> published with Filely to https://repo.corp.evernym.com/filely/npm/
+// vcx_<ver>.tar.gz (Python Installable package) ----> archived with Jenkins
+// ********* OTHERS ********
+// DEPRECATED ( NO LONGER PRODUCED ) libvcx.tar.gz (libvcx.so file and provision_agent_keys.py) ----> archived with Jenkins
+
+testing()
+
+def testing() {
+    stage('Testing') {
+        parallel([
+            'Main' : { mainUbuntu() },
+            'Android': { android() },
+            'iOS' : { ios() }
+        ])
+    }
+}
 
 def getUserUid() {
     return sh(returnStdout: true, script: 'id -u').trim()
@@ -14,266 +33,140 @@ def build(name, file, context='.', customParams = '') {
     return docker.build("$name", "${customParams} --build-arg uid=${getUserUid()} -f $file $context")
 }
 
-node('ubuntu') {
-    try {
-        stage ('Checkout'){
-            checkout scm
-        }
+def mainUbuntu() {
+    node('ubuntu') {
+        stage('Main Build - Ubuntu') {
+            // def volumeName = "vcx-volume"
+            sh "mkdir -p vcx/output"
+            def volumeInternalDir = "/sdk/vcx/output"
+            def libindyDockerfile = "vcx/ci/libindy.dockerfile"
+            def libvcxDockerfile = "vcx/ci/libvcx.dockerfile"
+            def pythonDockerfile = "vcx/wrappers/python3/ci/python.dockerfile"
+            def nodeDockerfile = "vcx/wrappers/node/ci/node.dockerfile"
+            def publishDockerfile = "vcx/ci/publish.dockerfile"
+            try {
+                checkout scm
+                
+                // ******** Build the libindy base image (pulls down dependent debians from sovrin repo, and installs a majority of the dependencies)
+                def libindy = docker.build("libindy", "-f ${libindyDockerfile} .")
 
-        
-        stage ('Build Rust Image') {
-            rust = build('rust', 'vcx/ci/ubuntu.dockerfile', 'vcx')
-        }
-       
-        // update the versions in the toml file and package.json
-        stage('Updating Versions') {
-            updateVersions(rust)     
-        }
+                // ******** Build the libvcx base image (runs tests and creates debian automatically) ********
+                def libvcx = docker.build("libvcx", "-f ${libvcxDockerfile} .")
+                sh "docker run --name libvcx --rm libvcx"
+               
+                // ******** Builds and tests the Node JS Wrapper *******
+                def node = docker.build("node", "-f ${nodeDockerfile} .")
+                sh "docker run --name node --rm node"
+                
+                // ******** Builds and tests the Python Wrapper *******
+                def python = docker.build("python", "-f ${pythonDockerfile} .")    
+                sh "docker run --name python --rm python"
+                
+                if (env.BRANCH_NAME == "master") {
+                    // ******** PUBLISHING (artifacts are in a Docker Volume) ********
+                    withCredentials([usernameColonPassword(credentialsId: 'jenkins-kraken-svc', variable: 'KRAKEN_CREDENTIALS')]) {
+                        def publish = docker.build('publish', "-f ${libvcxDockerfile} .")
+                        publish.inside("--network=host") {
+                            // ******** Publish Libvcx Debian to repo ********
+                            sh "/sdk/vcx/ci/scripts/publish.sh \"${KRAKEN_CREDENTIALS}\" \"libvcx*.deb\" https://kraken.corp.evernym.com/repo/portal_dev/upload"
+                            sh "/sdk/vcx/ci/scripts/publish.sh \"${KRAKEN_CREDENTIALS}\" \"libvcx*.deb\" https://kraken.corp.evernym.com/repo/agency_dev/upload"
+                            
+                            // ******** Publish Npm Package to filely repo ********
+                            sh "/sdk/vcx/ci/scripts/publish.sh \"${KRAKEN_CREDENTIALS}\" \"*.tgz\" https://kraken.corp.evernym.com/repo/npm/upload"
+                 
+                            // ******** Publish vcx Debian To Repo (NPM PACKAGES) 
+                            sh "/sdk/vcx/ci/scripts/publish.sh \"${KRAKEN_CREDENTIALS}\" \"vcx_*.deb\" https://kraken.corp.evernym.com/repo/agency_dev/upload"
+                            sh "/sdk/vcx/ci/scripts/publish.sh \"${KRAKEN_CREDENTIALS}\" \"vcx_*.deb\" https://kraken.corp.evernym.com/repo/portal_dev/upload"
 
-        // build and test the so file
-        stage ('Building Libvcx.so'){
-            buildRust(rust)
-        }
+                            // ******** Archive with Jenkins ********
+                            archiveArtifacts allowEmptyArchive: true, artifacts: 'vcx/output/*'
 
-        // test rust
-        stage ('Testing Rust'){
-            testRust(rust)
-        }
-        
-        // update the so file to have version
-        stage('Updating .so file version') {
-            updateSo(rust)
-        }
-        
-        // image used as an intermediary, where the libvcx.so is placed into /usr/lib.  
-        // This image must be built after the rust build and tests have been run.
-        stage ('Build Libindy Image') {
-            libindy = build('libindy', 'vcx/ci/Dockerfile-libindy', 'vcx')
-        }
-        // test python wrapper, the image must be built after the libindy image build, and must be --no-cache
-        stage ('Build Python Image') {
-            vcx_python = build('vcx-python', 'vcx/wrappers/python3/ci/Dockerfile-python-wrapper', 'vcx', '--no-cache')
-        }
+                        }
+                    }
+                }
 
-        stage ("Testing Python Wrapper"){
-            testPythonWrapper(vcx_python)
-        }
-
-        // test nodejs wrapper, the image must be built after  the libindy image build, and must be --no-cache
-        stage ('Build NodeJs Images') {
-            nodejs = build('nodejs', 'vcx/wrappers/node/ci/Dockerfile-nodejs', 'vcx')
-            vcx_nodejs = build('vcx-nodejs', 'vcx/wrappers/node/ci/Dockerfile-nodejs-wrapper', 'vcx', '--no-cache')
-        }
-
-        stage ('Test Node Wrapper'){
-            testNodeWrapper(vcx_nodejs)
-        }       
-
-        if (env.BRANCH_NAME == "master") {
-            // create the debian of the library (just the libvcx.so file)
-            stage('Build libvcx Debian and compress .so file') {
-                createDeb(rust)
-            }
-            
-            // create the npm deb 
-            createNpmDeb(rust, "*_amd64.tgz")
-            renameAndUploadNpmTgz(rust, "vcx")
-
-            // create pip installable artifact
-            stage ('Building Python Artifact') {
-                createPtyhonArtifact(vcx_python, getVcxVersion(vcx_python))
-            }
-        }
-
-    } catch (Exception ex) {
-        currentBuild.result = "FAILED"
-        if (env.BRANCH_NAME == "master") {
-            fail()
-        }
-        echo "$ex error"
-    } finally {
-        step([$class: 'WsCleanup'])
-    }
-}
-
-def getRevisionFromGit() {
-    revision = sh 'git log --pretty=format:\'%h\' -n 1'
-    return revision
-}
-
-def addCert(envn) {
-    envn.inside {
-        CERT_SCRIPT = 'vcx/ci/scripts/getCert.sh'
-        // get Evernym Certificate onto machine
-        sh "${CERT_SCRIPT}"
-    }    
-}
-
-def uploadPrivateNpm(envn) {
-    envn.inside {
-        withCredentials([usernameColonPassword(credentialsId: 'jenkins-kraken-svc', variable: 'KRAKEN_CREDENTIALS')]) {
-            // upload npm module
-            sh "find vcx/wrappers/node/ -type f -name 'vcx-*.tgz' -exec curl --cacert /tmp/cert/ca.crt -u \"${KRAKEN_CREDENTIALS}\" -X POST https://kraken.corp.evernym.com/repo/npm/upload -F 'file=@{}' \\;"                      
-        }
-    }
-}
-// This runs a python script that extracts version information out of the Cargo.toml file.
-def getVcxVersion(envn){
-    envn.inside {
-        withEnv(["PYTHONPATH=/scripts"]) {
-            version = sh(
-                script: "python3 -c 'import toml_utils; print(toml_utils.get_version_from_file(\"vcx/libvcx/Cargo.toml\"))'",
-                returnStdout: true
-            )
-            return version
-        }
-    }
-}
-
-def testPythonWrapper(envn){
-    envn.inside {
-        sh "python3 -m pytest"
-    }
-    
-}
-
-def buildRust(envn){ 
-    envn.inside {
-        sh "rustc --version"
-        sh "gcc --version"
-        sh "cd vcx/libvcx; cargo build --features ci --color=never"
-    }
-}
-
-def testRust(envn) {
-    envn.inside {
-        sh "cd vcx/libvcx; cargo test --color=never -- --test-threads=1"
-    }
-}
-
-// Creates a tar.gz file that is installable from pip.
-def createPtyhonArtifact(envn, version) {
-    dir('vcx/wrappers/python3'){
-        sh 'echo Building Python Artifact'
-        withEnv(["VCX_VERSION=${version}"]) {
-            envn.inside {
-                sh(
-                    script: "python3 setup.py sdist",
-                    returnStdout: true
-                )
-                archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/**/*.tar.gz'
+            } catch (Exception ex) {
+                currentBuild.result = "FAILED"
+                if (env.BRANCH_NAME == "master") {
+                    fail()
+                }
+                echo "$ex error"
+            } finally {
+                sh "docker rm -f libvcx || true"
+                sh "docker rm -f node || true"
+                sh "docker rm -f python || true"
+				sh 'docker system df'
+                step([$class: 'WsCleanup'])
             }
         }
     }
 }
 
-// Update the version and revision in the Cargo.toml file, also the so file .
-def updateVersions(app) {
-    app.inside {
-        sh 'ls -l'
-        // TODO fix this ... these *SHOULD* be cargo commands.
-        sh 'cd vcx/libvcx; ls -l; ls ../ci/scripts'
-        sh 'cd vcx/libvcx; python ../ci/scripts/cargo-update-version'
+def android() {
+    node('ubuntu') {
+        stage('Android Build') {
+            try {
+                checkout scm
 
-    }
-}
+                //Build android docker image
+                rust = build('rust', 'vcx/ci/android.dockerfile', 'vcx')
+                
+                //Build .so files for arm64, x86, and arm
+                buildAndroid(rust)
 
-// Updates the libvcx.so file to libvcx<VER>.so
-def updateSo(app) {
-    app.inside {
-        sh 'cd vcx/libvcx; python ../ci/scripts/cargo-update-so'
-    }
-}
+                //Package .so files into .aar 
+                packageAndroid(rust)
 
-// Creates the debian package for the library, as well as gzips the libvcx.so.<version> file
-// Publishes both artifacts.
-def createDeb(envn) {
-    envn.inside {
-        CERT_SCRIPT = 'vcx/ci/scripts/getCert.sh'
-        SCRIPT = 'vcx/ci/scripts/gzip_so_file.py'
-        FILES = 'vcx/libvcx/target/debug/libvcx.so.* vcx/libvcx/scripts/provision_agent_keys.py'
-        DEST = 'libvcx.tar.gz'
-
-        // get Evernym Certificate onto machine
-        sh "${CERT_SCRIPT}"
-            
-        // build debian
-        sh 'cd vcx/libvcx/; cargo deb --no-build'
-
-
-        if (env.BRANCH_NAME == "master") {
-            // archive debian to Jenkins
-            archiveArtifacts allowEmptyARchive: true, artifacts: "vcx/libvcx/target/debian/libvcx_*_amd64.deb"
-
-            // archive .so file to Jenkins
-            sh "python ${SCRIPT} ${FILES} ${DEST}"
-            archiveArtifacts allowEmptyARchive: true, artifacts: DEST
-
-            // upload debian to Repo
-            withCredentials([usernameColonPassword(credentialsId: 'jenkins-kraken-svc', variable: 'KRAKEN_CREDENTIALS')]) {
-                sh "find vcx/libvcx/target/debian/ -type f -name 'libvcx_*_amd64.deb' -exec curl --cacert /tmp/cert/ca.crt -u \"${KRAKEN_CREDENTIALS}\" -X POST https://kraken.corp.evernym.com/repo/agency_dev/upload -F file=@{} \\;"
-                sh "find vcx/libvcx/target/debian/ -type f -name 'libvcx_*_amd64.deb' -exec curl --cacert /tmp/cert/ca.crt -u \"${KRAKEN_CREDENTIALS}\" -X POST https://kraken.corp.evernym.com/repo/portal_dev/upload -F file=@{} \\;"
+                if (env.BRANCH_NAME == "master") {
+                    //Publish package on aptly
+                    publishAndroid(rust)
+                }
+            } catch (Exception ex) {
+                // We currently do not fail the main build if the android and ios builds fai
+                currentBuild.result = "FAILED"
+                if (env.BRANCH_NAME == "master") {
+                    fail()
+                }
+                echo "$ex error"
+            } finally {
+				sh 'docker system df'
+                step([$class: 'WsCleanup'])
             }
+
         }
     }
 }
 
-// Creates the tgz file that can be 'npm install'-ed.
-def testNodeWrapper(envn) {
-    dir('vcx/wrappers/node'){
-        envn.inside() {
-            sh 'npm install'
-            sh 'npm -v'
-            sh 'npm run lint'
-            sh 'npm run compile'
-            sh 'npm test'
-            sh 'npm pack'
-            archiveArtifacts allowEmptyArchive: true, artifacts: '**/*.tgz'
-        }
-    }
-}
+def ios() {
+    node('macos-vcx') {
+        stage('iOS Build') {
+            try {
+                checkout scm
+                SCRIPTS_PATH="vcx/libvcx/build_scripts/ios/mac"
+                WORK_DIR = "/Users/jenkins"
 
-def renameAndUploadNpmTgz(envn, destDir) {
-    envn.inside {
-        sh "pwd"
-        sh "ls"
-        CERT_SCRIPT = 'vcx/ci/scripts/getCert.sh'
-        sh "${CERT_SCRIPT}"
-        filename = 'vcx/wrappers/node/vcx-*.tgz'
-        sh "cp ${filename} vcx"
-        sh "ls vcx"
-        sh "echo ${destDir}"
-        
-        withCredentials([usernameColonPassword(credentialsId: 'jenkins-kraken-svc', variable: 'KRAKEN_CREDENTIALS')]) {
-            sh "pwd"
-            sh "cd vcx; rename \"s/\\.tgz\$/_amd64\\.tgz/\" *.tgz"
-            sh "cd vcx; rename \"s/vcx-/vcx_/\" *.tgz"
-            sh 'cd vcx; ls -a'
-            sh "cd vcx; find . -type f -name '*.tgz' -exec curl --cacert /tmp/cert/ca.crt -u \"${KRAKEN_CREDENTIALS}\" -X POST https://kraken.corp.evernym.com/repo/npm/upload -F 'file=@{}' \\;"  
-        }
-    }
-}
+                // Build ios architectures
+                sh "source vcx/ci/scripts/iosBuild.sh"
 
-// Creates debian that can install through npm.
-def createNpmDeb(app, npmFilename){
-    dir('vcx') {
-        app.inside {
-            CERT_SCRIPT = 'ci/scripts/getCert.sh'
-            sh "${CERT_SCRIPT}"
-            sh 'ls'
-            sh 'python ci/scripts/create_npm_deb.py wrappers/node/vcx-*.tgz'
-            sh 'ls'
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'vcx*.deb'
+                // Publish to Kraken
 
-            withCredentials([usernameColonPassword(credentialsId: 'jenkins-kraken-svc', variable: 'KRAKEN_CREDENTIALS')]) {
-                // upload npm module
-                sh "find wrappers/node/ -type f -name 'vcx-*.tgz' -exec curl --cacert /tmp/cert/ca.crt -u \"${KRAKEN_CREDENTIALS}\" -X POST https://kraken.corp.evernym.com/repo/agency_dev/upload -F file=@{} \\;"
-                sh "find wrappers/node/ -type f -name 'vcx-*.tgz' -exec curl --cacert /tmp/cert/ca.crt -u \"${KRAKEN_CREDENTIALS}\" -X POST https://kraken.corp.evernym.com/repo/portal_dev/upload -F file=@{} \\;"
-  
-                // upload debian
-                sh "find . -type f -name 'vcx_*_amd64.deb' -exec curl --cacert /tmp/cert/ca.crt -u \"${KRAKEN_CREDENTIALS}\" -X POST https://kraken.corp.evernym.com/repo/agency_dev/upload -F file=@{} \\;"
-                sh "find . -type f -name 'vcx_*_amd64.deb' -exec curl --cacert /tmp/cert/ca.crt -u \"${KRAKEN_CREDENTIALS}\" -X POST https://kraken.corp.evernym.com/repo/portal_dev/upload -F file=@{} \\;"
+                if (env.BRANCH_NAME == "master") {
+                    withCredentials([usernameColonPassword(credentialsId: 'jenkins-kraken-svc', variable: 'KRAKEN_CREDENTIALS')]) {
+                        sh "find /Users/jenkins/IOSBuilds/libvcxpartial/ -type f -name 'vcx.libvcxpartial_*_universal.zip' -exec curl -u \"${KRAKEN_CREDENTIALS}\" -X POST  https://kraken.corp.evernym.com/repo/ios/upload -F 'file=@{}' \\;"
+                        sh "find /Users/jenkins/IOSBuilds/libvcxall/ -type f -name 'vcx.libvcxall_*_universal.zip' -exec curl -u \"${KRAKEN_CREDENTIALS}\" -X POST  https://kraken.corp.evernym.com/repo/ios/upload -F 'file=@{}' \\;"
+                    }
+                }
+            } catch (Exception ex) {
+                // We currently do not fail the main build if the android and ios builds fail
+                currentBuild.result = "FAILED"
+                if (env.BRANCH_NAME == "master") {
+                    fail()
+                }
+                echo "$ex error"
+            } finally {
+                step([$class: 'WsCleanup'])
             }
+
         }
     }
 }
@@ -285,3 +178,44 @@ def fail() {
     slackSend message
 }
 
+def buildAndroid(envn) {
+    envn.inside {
+        LIBINDY_BRANCH="stable"
+        LIBINDY_VERSION="1.6.1"
+        LIBINDY_TAG=""
+        LIBNULLPAY_BRANCH="stable"
+        LIBNULLPAY_VERSION="1.6.1"
+        LIBNULLPAY_TAG=""
+
+        ANDROID_SCRIPT_PATH = 'vcx/ci/scripts/androidBuild.sh'
+        sh "LIBINDY_BRANCH=${LIBINDY_BRANCH} LIBINDY_VERSION=${LIBINDY_VERSION} LIBNULLPAY_BRANCH=${LIBNULLPAY_BRANCH} LIBNULLPAY_VERSION=${LIBNULLPAY_VERSION} ./${ANDROID_SCRIPT_PATH} arm64"
+        sh "LIBINDY_BRANCH=${LIBINDY_BRANCH} LIBINDY_VERSION=${LIBINDY_VERSION} LIBNULLPAY_BRANCH=${LIBNULLPAY_BRANCH} LIBNULLPAY_VERSION=${LIBNULLPAY_VERSION} ./${ANDROID_SCRIPT_PATH} arm"
+        sh "LIBINDY_BRANCH=${LIBINDY_BRANCH} LIBINDY_VERSION=${LIBINDY_VERSION} LIBNULLPAY_BRANCH=${LIBNULLPAY_BRANCH} LIBNULLPAY_VERSION=${LIBNULLPAY_VERSION} ./${ANDROID_SCRIPT_PATH} x86"
+//        sh "LIBINDY_BRANCH=${LIBINDY_BRANCH} LIBINDY_VERSION=${LIBINDY_VERSION} LIBNULLPAY_BRANCH=${LIBNULLPAY_BRANCH} LIBNULLPAY_VERSION=${LIBNULLPAY_VERSION} ./${ANDROID_SCRIPT_PATH} arm64"
+        //Todo: get parallel processing to work. Currently it fails on Jenkins. It must share files or something
+        // parallel([
+        //     'arm': { sh "./${ANDROID_SCRIPT_PATH} arm"},
+        //     'x86': { sh "./${ANDROID_SCRIPT_PATH} x86"},
+        //     'arm64': { sh "./${ANDROID_SCRIPT_PATH} arm64"}
+        // ])
+    }
+}
+
+def packageAndroid(envn) {
+    envn.inside {
+        ANDROID_SCRIPT_PATH = 'vcx/ci/scripts/androidPackage.sh'
+        sh "chmod +x ${ANDROID_SCRIPT_PATH}"
+        sh "./${ANDROID_SCRIPT_PATH}"
+    }
+}
+
+def publishAndroid(envn) {
+    envn.inside {
+        withCredentials([file(credentialsId: 'cloudrepo-artifactory-settings-libvcx', variable: 'settingsFile')]) {
+            sh 'cp $settingsFile .'
+            ANDROID_SCRIPT_PATH = 'vcx/ci/scripts/androidPublish.sh'
+            sh "chmod +x ${ANDROID_SCRIPT_PATH}"
+            sh "./${ANDROID_SCRIPT_PATH}"
+        }
+    }
+}

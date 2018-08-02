@@ -18,7 +18,6 @@ use messages::send_message::parse_msg_uid;
 use messages::extract_json_payload;
 
 use utils::libindy::anoncreds::{libindy_prover_create_credential_req, libindy_prover_store_credential};
-use utils::libindy::wallet;
 use utils::libindy::crypto;
 use utils::libindy::payments::{pay_a_payee, PaymentTxn};
 
@@ -27,7 +26,7 @@ use connection;
 
 use settings;
 use utils::httpclient;
-use utils::constants::{ SEND_MESSAGE_RESPONSE };
+use utils::constants::{ SEND_MESSAGE_RESPONSE, DEFAULT_SERIALIZE_VERSION };
 
 use error::{ToErrorCode, credential::CredentialError};
 use serde_json::Value;
@@ -143,7 +142,7 @@ impl Credential {
         let req: CredentialRequest = self.build_request(local_my_did, local_their_did)?;
         self.credential_request = Some(req.clone());
         let req = serde_json::to_string(&req).or(Err(CredentialError::InvalidCredentialJson()))?;
-        let data: Vec<u8> = connection::generate_encrypted_payload(local_my_vk, local_their_vk, &req, "CLAIM_REQ").map_err(|e| CredentialError::CommonError(e.to_error_code()))?;
+        let data: Vec<u8> = connection::generate_encrypted_payload(local_my_vk, local_their_vk, &req, "CRED_REQ").map_err(|e| CredentialError::CommonError(e.to_error_code()))?;
         let offer_msg_id = self.credential_offer.as_ref().unwrap().msg_ref_id.as_ref().ok_or(CredentialError::CommonError(error::CREATE_CREDENTIAL_REQUEST_ERROR.code_num))?;
         if settings::test_agency_mode_enabled() { httpclient::set_next_u8_response(SEND_MESSAGE_RESPONSE.to_vec()); }
 
@@ -154,7 +153,7 @@ impl Credential {
         
         match messages::send_message().to(local_my_did)
             .to_vk(local_my_vk)
-            .msg_type("claimReq")
+            .msg_type("credReq")
             .agent_did(local_agent_did)
             .agent_vk(local_agent_vk)
             .edge_agent_payload(&data)
@@ -181,17 +180,18 @@ impl Credential {
         let my_vk = self.my_vk.as_ref().ok_or(e_code)?;
         let msg_uid = self.msg_uid.as_ref().ok_or(e_code)?;
 
-        let payload = messages::get_message::get_all_message(my_did,
-                                                         my_vk,
-                                                         agent_did,
-                                                         agent_vk)?;
+        let payload = messages::get_message::get_connection_messages(my_did,
+                                                                     my_vk,
+                                                                     agent_did,
+                                                                     agent_vk,
+                                                                     None)?;
 
         for msg in payload {
-            if msg.msg_type.eq("claim") {
+            if msg.msg_type.eq("cred") {
                 match msg.payload {
                     Some(ref data) => {
                         let data = to_u8(data);
-                        let data = crypto::parse_msg(wallet::get_wallet_handle(), &my_vk, data.as_slice())?;
+                        let (_, data) = crypto::parse_msg(&my_vk, data.as_slice())?;
 
                         let credential = extract_json_payload(&data)?;
 
@@ -276,7 +276,7 @@ impl Credential {
             Some(ref x) => format!(r#","price":"{}","payment_address":"{}""#,x.price,x.payment_addr),
             None => "".to_string(),
         };
-        format!(r#"{{"credential_id":"{}","credential":{}{}}}"#,self.get_source_id(), cred, payment_string)
+        format!(r#"{{"credential_id":"{}","credential":{}{}}}"#,self.get_credential_id(), cred, payment_string)
     }
 
     fn to_cred_offer_string(&self, cred_offer: &str) -> String {
@@ -291,7 +291,13 @@ impl Credential {
 
     fn get_source_id(&self) -> &String {&self.source_id}
 
-    fn get_payment_txn(&self) -> Result<Option<PaymentTxn>, u32> { Ok(self.payment_txn.clone()) }
+    fn get_payment_txn(&self) -> Result<PaymentTxn, u32> {
+        if self.payment_info.is_none() || self.payment_txn.is_none() {
+            return Err(error::NO_PAYMENT_INFORMATION.code_num);
+        }
+
+        Ok(self.payment_txn.clone().unwrap())
+    }
 
     fn set_credential_offer(&mut self, offer: CredentialOffer){
         self.credential_offer = Some(offer);
@@ -316,6 +322,21 @@ impl Credential {
 
     fn get_payment_info(&self) -> Result<Option<PaymentInfo>, CredentialError> {
         Ok(self.payment_info.clone())
+    }
+
+    fn to_string(&self) -> String {
+        json!({
+            "version": DEFAULT_SERIALIZE_VERSION,
+            "data": json!(self),
+        }).to_string()
+    }
+
+    fn from_str(s: &str) -> Result<Credential, CredentialError> {
+        let s:Value = serde_json::from_str(&s)
+            .or(Err(CredentialError::InvalidCredentialJson()))?;
+        let obj: Credential = serde_json::from_value(s["data"].clone())
+            .or(Err(CredentialError::InvalidCredentialJson()))?;
+        Ok(obj)
     }
 }
 
@@ -368,9 +389,10 @@ pub fn get_credential(handle: u32) -> Result<String, CredentialError> {
     }).map_err(|ec| CredentialError::CommonError(ec))
 }
 
-pub fn get_payment_txn(handle: u32) -> Option<PaymentTxn> {
-    // get_payment_txn only ever returns Ok()
-    HANDLE_MAP.get(handle, |obj| { obj.get_payment_txn()}).unwrap()
+pub fn get_payment_txn(handle: u32) -> Result<PaymentTxn, CredentialError> {
+    HANDLE_MAP.get(handle, |obj| {
+        obj.get_payment_txn()
+    }).or(Err(CredentialError::NoPaymentInformation()))
 }
 
 pub fn get_credential_offer(handle: u32) -> Result<String, CredentialError> {
@@ -405,17 +427,17 @@ pub fn get_credential_offer_msg(connection_handle: u32, msg_id: &str) -> Result<
 
     if settings::test_agency_mode_enabled() { ::utils::httpclient::set_next_u8_response(::utils::constants::NEW_CREDENTIAL_OFFER_RESPONSE.to_vec()); }
 
-    let message = messages::get_message::get_matching_message(msg_id,
-                                                              &my_did,
-                                                              &my_vk,
-                                                              &agent_did,
-                                                              &agent_vk).map_err(|ec| CredentialError::CommonError(ec))?;
+    let message = messages::get_message::get_connection_messages(&my_did,
+                                                                 &my_vk,
+                                                                 &agent_did,
+                                                                 &agent_vk,
+                                                                 Some(vec![msg_id.to_string()])).map_err(|ec| CredentialError::CommonError(ec))?;
 
-    if message.msg_type.eq("claimOffer") {
-        let msg_data = match message.payload {
+    if message[0].msg_type.eq("credOffer") {
+        let (_, msg_data) = match message[0].payload {
             Some(ref data) => {
                 let data = to_u8(data);
-                crypto::parse_msg(wallet::get_wallet_handle(), &my_vk, data.as_slice()).map_err(|ec| CredentialError::CommonError(ec))?
+                crypto::parse_msg(&my_vk, data.as_slice()).map_err(|ec| CredentialError::CommonError(ec))?
             },
             None => return Err(CredentialError::CommonError(error::INVALID_MESSAGES.code_num))
         };
@@ -423,7 +445,7 @@ pub fn get_credential_offer_msg(connection_handle: u32, msg_id: &str) -> Result<
         let offer = extract_json_payload(&msg_data).map_err(|ec| CredentialError::CommonError(ec))?;
         let (mut offer, payment_info) = parse_json_offer(&offer)?;
 
-        offer.msg_ref_id = Some(message.uid.to_owned());
+        offer.msg_ref_id = Some(message[0].uid.to_owned());
         let mut payload = Vec::new();
         payload.push(json!(offer));
         if payment_info.is_some() { payload.push(json!(payment_info.unwrap())); }
@@ -442,19 +464,20 @@ pub fn get_credential_offer_messages(connection_handle: u32, match_name: Option<
 
     if settings::test_agency_mode_enabled() { ::utils::httpclient::set_next_u8_response(::utils::constants::NEW_CREDENTIAL_OFFER_RESPONSE.to_vec()); }
 
-    let payload = messages::get_message::get_all_message(&my_did,
-                                                     &my_vk,
-                                                     &agent_did,
-                                                     &agent_vk).map_err(|ec| CredentialError::CommonError(ec))?;
+    let payload = messages::get_message::get_connection_messages(&my_did,
+                                                                 &my_vk,
+                                                                 &agent_did,
+                                                                 &agent_vk,
+                                                                 None).map_err(|ec| CredentialError::CommonError(ec))?;
 
     let mut messages = Vec::new();
 
     for msg in payload {
-        if msg.msg_type.eq("claimOffer") {
-            let msg_data = match msg.payload {
+        if msg.msg_type.eq("credOffer") {
+            let (_, msg_data) = match msg.payload {
                 Some(ref data) => {
                     let data = to_u8(data);
-                    crypto::parse_msg(wallet::get_wallet_handle(), &my_vk, data.as_slice()).map_err(|ec| CredentialError::CommonError(ec))?
+                    crypto::parse_msg( &my_vk, data.as_slice()).map_err(|ec| CredentialError::CommonError(ec))?
                 },
                 None => return Err(CredentialError::CommonError(error::INVALID_MESSAGES.code_num))
             };
@@ -516,10 +539,7 @@ pub fn is_valid_handle(handle: u32) -> bool {
 
 pub fn to_string(handle: u32) -> Result<String, u32> {
     HANDLE_MAP.get(handle, |obj|{
-        serde_json::to_string(&obj).map_err(|e|{
-            warn!("Unable to serialize: {:?}", e);
-            error::SERIALIZATION_ERROR.code_num
-        })
+        Ok(Credential::to_string(&obj))
     })
 }
 
@@ -530,7 +550,7 @@ pub fn get_source_id(handle: u32) -> Result<String, CredentialError> {
 }
 
 pub fn from_string(credential_data: &str) -> Result<u32, u32> {
-    let credential: Credential = match serde_json::from_str(credential_data) {
+    let credential: Credential = match Credential::from_str(credential_data) {
         Ok(x) => x,
         Err(y) => return Err(error::INVALID_JSON.code_num),
     };
@@ -569,8 +589,7 @@ pub mod tests {
     use utils::httpclient;
     use api::VcxStateType;
     use serde_json::Value;
-    use utils::devsetup::tests;
-    use error::payment::PaymentError;
+    use utils::libindy::wallet;
     pub const BAD_CREDENTIAL_OFFER: &str = r#"{"version": "0.1","to_did": "LtMgSjtFcyPwenK9SHCyb8","from_did": "LtMgSjtFcyPwenK9SHCyb8","claim": {"account_num": ["8BEaoLf8TBmK4BUyX8WWnA"],"name_on_account": ["Alice"]},"schema_seq_no": 48,"issuer_did": "Pd4fnFtRBcMKRVC2go5w3j","claim_name": "Account Certificate","claim_id": "3675417066","msg_ref_id": "ymy5nth"}"#;
     use utils::constants::{DEFAULT_SERIALIZED_CREDENTIAL,
                            DEFAULT_SERIALIZED_CREDENTIAL_PAYMENT_REQUIRED};
@@ -586,7 +605,7 @@ pub mod tests {
     }
 
     fn create_credential_with_price(price:u64) -> Credential{
-        let mut cred: Credential = serde_json::from_str(DEFAULT_SERIALIZED_CREDENTIAL).unwrap();
+        let mut cred: Credential = Credential::from_str(DEFAULT_SERIALIZED_CREDENTIAL).unwrap();
         cred.payment_info = Some(PaymentInfo {
             payment_required: "one-time".to_string(),
             payment_addr: "pov:null:OsdjtGKavZDBuG2xFw2QunVwwGs5IB3j".to_string(),
@@ -622,13 +641,13 @@ pub mod tests {
         release(handle).unwrap();
         assert_eq!(release(handle).err(), Some(CredentialError::InvalidHandle()));
         let handle = from_string(&credential_string).unwrap();
-        let cred1: Credential = serde_json::from_str(&credential_string).unwrap();
+        let cred1: Credential = Credential::from_str(&credential_string).unwrap();
         assert_eq!(cred1.get_state(), 3);
-        let cred2: Credential = serde_json::from_str(&to_string(handle).unwrap()).unwrap();
+        let cred2: Credential = Credential::from_str(&to_string(handle).unwrap()).unwrap();
         assert!(!cred1.is_payment_required());
         assert_eq!(cred1, cred2);
         let handle = from_string(DEFAULT_SERIALIZED_CREDENTIAL_PAYMENT_REQUIRED).unwrap();
-        let payment_required_credential: Credential = serde_json::from_str(&to_string(handle).unwrap()).unwrap();
+        let payment_required_credential: Credential = Credential::from_str(&to_string(handle).unwrap()).unwrap();
         assert!(payment_required_credential.is_payment_required())
     }
 
@@ -674,54 +693,46 @@ pub mod tests {
         wallet::delete_wallet(test_name).unwrap();
     }
 
-    #[cfg(feature = "pool_tests")]
-    #[cfg(feature = "nullpay")]
     #[test]
     fn test_pay_for_credential_with_sufficient_funds() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "true");
         let test_name = "test_pay_for_credential_with_sufficient_funds";
-        tests::setup_ledger_env(test_name);
-        let cred = create_credential_with_price(25);
+        let cred = create_credential_with_price(1);
         assert!(cred.is_payment_required());
         let payment = serde_json::to_string(&cred.submit_payment().unwrap().0).unwrap();
         assert!(payment.len() > 50);
-        tests::cleanup_dev_env(test_name);
     }
 
-    #[cfg(feature = "pool_tests")]
-    #[cfg(feature = "nullpay")]
     #[test]
     fn test_pay_for_non_premium_credential() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "true");
         let test_name = "test_pay_for_non_premium_credential";
-        tests::setup_ledger_env(test_name);
-        let cred: Credential = serde_json::from_str(DEFAULT_SERIALIZED_CREDENTIAL).unwrap();
+        let cred: Credential = Credential::from_str(DEFAULT_SERIALIZED_CREDENTIAL).unwrap();
         assert!(cred.payment_info.is_none());
         assert_eq!(cred.submit_payment().err(), Some(CredentialError::NoPaymentInformation()));
-        tests::cleanup_dev_env(test_name);
     }
 
-    #[cfg(feature = "pool_tests")]
-    #[cfg(feature = "nullpay")]
     #[test]
     fn test_pay_for_credential_with_insufficient_funds() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "true");
         let test_name = "test_pay_for_credential_with_insufficient_funds";
-        tests::setup_ledger_env(test_name);
         let cred = create_credential_with_price(10000000000);
-        assert_eq!(cred.submit_payment().err(), Some(CredentialError::PaymentError(PaymentError::InsufficientFunds())));
-        tests::cleanup_dev_env(test_name);
+        assert!(cred.submit_payment().is_err());
     }
 
-    #[cfg(feature = "pool_tests")]
-    #[cfg(feature = "nullpay")]
     #[test]
     fn test_pay_for_credential_with_handle() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "true");
         let test_name = "test_pay_for_credential_with_handle";
-        tests::setup_ledger_env(test_name);
         let handle = from_string(DEFAULT_SERIALIZED_CREDENTIAL_PAYMENT_REQUIRED).unwrap();
         submit_payment(handle).unwrap();
         get_payment_information(handle).unwrap();
         let handle2 = from_string(DEFAULT_SERIALIZED_CREDENTIAL).unwrap();
         assert!(!is_payment_required(handle2).unwrap());
-        tests::cleanup_dev_env(test_name);
         let invalid_handle = 12345;
         assert_eq!(is_payment_required(invalid_handle).err(), Some(CredentialError::InvalidHandle()));
     }
@@ -730,21 +741,17 @@ pub mod tests {
     fn test_get_credential() {
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "true");
-
         let handle = from_string(::utils::constants::DEFAULT_SERIALIZED_CREDENTIAL).unwrap();
         let offer_string = get_credential_offer(handle).unwrap();
-        println!("{}", offer_string);
-        let handle = from_string(r#"{"source_id":"test_credential_serialize_deserialize","state":4,"credential_name":null,"credential_request":null,"credential_offer":null,"msg_uid":null,"agent_did":null,"agent_vk":null,"my_did":null,"my_vk":null,"their_did":null,"their_vk":null,"cred_id":null,"credential":"something","payment_info":null}"#).unwrap();
+        let handle = from_string(::utils::constants::FULL_CREDENTIAL_SERIALIZED).unwrap();
         let cred_string = get_credential(handle).unwrap();
-        println!("{}", cred_string);
     }
 
-    #[cfg(feature = "pool_tests")]
-    #[cfg(feature = "nullpay")]
     #[test]
     fn test_submit_payment_through_credential_request() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "true");
         let test_name = "test_submit_payment_through_credential_request";
-        tests::setup_ledger_env(test_name);
         use utils::libindy::payments::get_wallet_token_info;
         let balance = get_wallet_token_info().unwrap().get_balance();
         assert!(balance > 0);
@@ -752,7 +759,5 @@ pub mod tests {
         assert!(cred.send_request(1234).is_err());
         let new_balance = get_wallet_token_info().unwrap().get_balance();
         assert_eq!(new_balance, balance);
-
-        tests::cleanup_dev_env(test_name);
     }
 }

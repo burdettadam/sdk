@@ -3,6 +3,9 @@ from enum import IntEnum
 
 class ErrorCode(IntEnum):
     Success = 0,
+    IndyInvalidWalletHandle = 200,
+    IndyWalletRecordNotFound = 212,
+    IndyDuplicateWalletRecord = 213,
     UnknownError = 1001,
     ConnectionError = 1002,
     InvalidConnectionHandle = 1003,
@@ -71,6 +74,17 @@ class ErrorCode(IntEnum):
     InvalidPaymentAddress = 1066,
     InvalidLibindyParam = 1067,
     InvalidPayment = 1068,
+    MissingWalletKey = 1069,
+    ObjectCacheError = 1070,
+    NoPaymentInformation = 1071,
+    DuplicateWalletRecord = 1072,
+    WalletRecordNotFound = 1073,
+    IOError = 1074,
+    InvalidWalletStorageParam = 1075,
+    MissingWalletName = 1076,
+    MissingExportedWalletPath = 1077,
+    MissingBackupKey = 1078,
+    WalletNotFound = 1079
 
 class VcxError(Exception):
     # error_code: ErrorCode

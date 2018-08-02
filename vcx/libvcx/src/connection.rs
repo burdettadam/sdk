@@ -6,7 +6,7 @@ extern crate libc;
 
 use utils::libindy::wallet;
 use utils::error;
-use utils::libindy::signus::SignusUtils;
+use utils::libindy::signus::create_and_store_my_did;
 use utils::libindy::crypto;
 use utils::json::mapped_key_rewrite;
 use api::VcxStateType;
@@ -23,6 +23,7 @@ use utils::json::KeyMatch;
 use error::connection::ConnectionError;
 use error::ToErrorCode;
 use object_cache::ObjectCache;
+use utils::constants::DEFAULT_SERIALIZE_VERSION;
 
 lazy_static! {
     static ref CONNECTION_MAP: ObjectCache<Connection> = Default::default();
@@ -89,7 +90,6 @@ impl Connection {
             Err(ec) => {
                 // TODO: Refactor Error
                 // TODO: Implement Correct Error
-//                return Err(error::POST_MSG_FAILURE.code_num)
                 return Err(ConnectionError::CommonError(ec))
             },
             Ok(response) => {
@@ -100,7 +100,6 @@ impl Connection {
                         error!("error when sending invite: {}", x);
                         // TODO: Refactor Error
                         // TODO: Implement Correct Error
-//                        return Err(x);
                         return Err(ConnectionError::GeneralConnectionError())
                     },
                 };
@@ -142,8 +141,7 @@ impl Connection {
                 .send_secure() {
                 Err(_) => {
                     // TODO: Refactor Error
-//                    TODO: Implement Correct Error
-//                    Err(error::POST_MSG_FAILURE.code_num)
+                    // TODO: Implement Correct Error
                     Err(ConnectionError::GeneralConnectionError())
                 },
                 Ok(response) => {
@@ -154,9 +152,8 @@ impl Connection {
         }
         else{
             warn!("Can not connect without Invite Details");
-//            Err(error::NOT_READY.code_num)
             // TODO: Refactor Error
-//            TODO: Implement Correct Error
+            // TODO: Implement Correct Error
             Err(ConnectionError::GeneralConnectionError())
         }
     }
@@ -170,7 +167,7 @@ impl Connection {
             _ => {
                 warn!("connection {} in state {} not ready to connect",self.source_id, self.state as u32);
                 // TODO: Refactor Error
-//            TODO: Implement Correct Error
+                // TODO: Implement Correct Error
                 Err(ConnectionError::GeneralConnectionError())
             }
         }
@@ -214,6 +211,21 @@ impl Connection {
         } else {
             true
         }
+    }
+
+    fn from_str(s: &str) -> Result<Self, ConnectionError> {
+        let s:Value = serde_json::from_str(&s)
+            .or(Err(ConnectionError::InvalidJson()))?;
+        let connection: Connection = serde_json::from_value(s["data"].clone())
+            .or(Err(ConnectionError::InvalidJson()))?;
+        Ok(connection)
+    }
+
+    fn to_string(&self) -> String {
+        json!({
+            "version": DEFAULT_SERIALIZE_VERSION,
+            "data": json!(self),
+        }).to_string()
     }
 }
 
@@ -409,7 +421,7 @@ fn create_connection(source_id: &str) -> Result<u32, ConnectionError> {
 }
 
 fn init_connection(handle: u32) -> Result<u32, ConnectionError> {
-    let (my_did, my_verkey) = match SignusUtils::create_and_store_my_did(wallet::get_wallet_handle(),None) {
+    let (my_did, my_verkey) = match create_and_store_my_did(wallet::get_wallet_handle(),None) {
         Ok(y) => y,
         Err(x) => {
             error!("could not create DID/VK: {}", x);
@@ -461,8 +473,19 @@ pub fn build_connection_with_invite(source_id: &str, details: &str) -> Result<u3
     let details:Value = serde_json::from_str(&details)
         .or(Err(ConnectionError::CommonError(error::INVALID_JSON.code_num)))?;
 
-    let invite_details:InviteDetail = serde_json::from_value(details)
-        .or(Err(ConnectionError::CommonError(error::INVALID_INVITE_DETAILS.code_num)))?;
+    let invite_details:InviteDetail = match serde_json::from_value(details.clone()) {
+        Ok(x) => x,
+        Err(x) => {
+            // Try converting to abbreviated
+            match unabbrv_event_detail(details) {
+                Ok(x) => match serde_json::from_value(x) {
+                    Ok(x) => x,
+                    Err(x) => return Err(ConnectionError::CommonError(error::INVALID_JSON.code_num)),
+                }
+                Err(_) => return Err(ConnectionError::CommonError(error::INVALID_JSON.code_num)),
+            }
+        },
+    };
 
     let new_handle = create_connection(source_id)?;
 
@@ -492,8 +515,8 @@ pub fn parse_acceptance_details(handle: u32, message: &Message) -> Result<Sender
 
     let my_vk = settings::get_config_value(settings::CONFIG_SDK_TO_REMOTE_VERKEY).unwrap();
     let payload = messages::to_u8(message.payload.as_ref().unwrap());
-    // TODO: Refactor Error
-    let payload = crypto::parse_msg(wallet::get_wallet_handle(),&my_vk,&payload).map_err(|e| {ConnectionError::CommonError(e)})?;
+    // TODO: check returned verkey
+    let (_, payload) = crypto::parse_msg(&my_vk,&payload).map_err(|e| {ConnectionError::CommonError(e)})?;
 
     trace!("deserializing GetMsgResponse: {:?}", payload);
 
@@ -573,12 +596,12 @@ pub fn connect(handle: u32, options: Option<String>) -> Result<u32, ConnectionEr
 pub fn to_string(handle: u32) -> Result<String,u32> {
     CONNECTION_MAP.get(handle, |t| {
         // TODO: Make this an error.to_error_code and back again?
-        serde_json::to_string(&t).or(Err(1))
+        Ok(Connection::to_string(&t))
     }).or(Err(error::INVALID_CONNECTION_HANDLE.code_num))
 }
 
 pub fn from_string(connection_data: &str) -> Result<u32, ConnectionError> {
-    let derived_connection: Connection = match serde_json::from_str(connection_data) {
+    let derived_connection: Connection = match Connection::from_str(connection_data) {
         Ok(x) => x,
         Err(_) => return Err(ConnectionError::CommonError(error::INVALID_JSON.code_num)),
     };
@@ -747,23 +770,39 @@ fn unabbrv_event_detail(val: Value) -> Result<Value, u32> {
 
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use utils::constants::*;
     use utils::httpclient;
     use messages::get_message::*;
     use std::thread;
     use std::time::Duration;
-    use utils::error::UNKNOWN_LIBINDY_ERROR;
     use utils::constants::INVITE_DETAIL_STRING;
     use super::*;
     use rand::Rng;
+
+    pub fn create_connected_connections() -> (u32, u32) {
+        let alice = build_connection("alice").unwrap();
+        connect(alice, Some("{}".to_string())).unwrap();
+        let details = get_invite_details(alice, false).unwrap();
+        //BE CONSUMER AND ACCEPT INVITE FROM INSTITUTION
+        ::utils::devsetup::tests::set_consumer();
+        let faber = build_connection_with_invite("faber", &details).unwrap();
+        assert_eq!(VcxStateType::VcxStateRequestReceived as u32, get_state(faber));
+        connect(faber, Some("{}".to_string())).unwrap();
+        //BE INSTITUTION AND CHECK THAT INVITE WAS ACCEPTED
+        ::utils::devsetup::tests::set_institution();
+        thread::sleep(Duration::from_millis(2000));
+        update_state(alice).unwrap();
+        assert_eq!(VcxStateType::VcxStateAccepted as u32, get_state(alice));
+        (faber, alice)
+    }
 
     #[test]
     fn test_build_connection(){
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
         assert_eq!(build_connection("This Should Fail").err(),
-                   Some(ConnectionError::CommonError(UNKNOWN_LIBINDY_ERROR.code_num)));
+                   Some(ConnectionError::CommonError(error::INVALID_WALLET_HANDLE.code_num)));
        assert!(build_connection_with_invite("This Should Fail", "BadDetailsFoobar").is_err());
     }
     #[test]
@@ -900,7 +939,7 @@ mod tests {
     fn test_bad_wallet_connection_fails() {
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"false");
-        assert_eq!(build_connection("test_bad_wallet_connection_fails").unwrap_err().to_error_code(),error::UNKNOWN_LIBINDY_ERROR.code_num);
+        assert_eq!(build_connection("test_bad_wallet_connection_fails").unwrap_err().to_error_code(),error::INVALID_WALLET_HANDLE.code_num);
     }
 
     #[test]
@@ -918,6 +957,7 @@ mod tests {
             msg_type: "connReqAnswer".to_string(),
             ref_msg_id: None,
             delivery_details: Vec::new(),
+            decrypted_payload: None,
         };
 
         let c = Connection {
@@ -947,6 +987,7 @@ mod tests {
             msg_type: "connReqAnswer".to_string(),
             ref_msg_id: None,
             delivery_details: Vec::new(),
+            decrypted_payload: None,
         };
 
         match parse_acceptance_details(handle, &bad_response) {
@@ -1086,7 +1127,12 @@ mod tests {
         let details = serde_json::to_string(&unabbrv_details).unwrap();
 
         let handle = build_connection_with_invite("alice",&details).unwrap();
+
         connect(handle,Some("{}".to_string())).unwrap();
+
+        let handle_2 = build_connection_with_invite("alice",&details).unwrap();
+
+        connect(handle_2,Some("{}".to_string())).unwrap();
         wallet::delete_wallet("create_with_details").unwrap();
     }
 
@@ -1148,5 +1194,4 @@ mod tests {
         assert_eq!(set_invite_details(1, details).err(), Some(ConnectionError::InvalidHandle()));
         assert_eq!(set_pw_verkey(1, "blah").err(), Some(ConnectionError::InvalidHandle()));
     }
-
 }

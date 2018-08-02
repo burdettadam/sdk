@@ -10,7 +10,6 @@ use utils::error;
 use messages::*;
 use serde::Deserialize;
 use self::rmp_serde::Deserializer;
-use utils::constants::*;
 
 
 #[derive(Clone, Deserialize, Serialize, Debug, PartialEq, PartialOrd)]
@@ -92,17 +91,17 @@ impl CreateKeyMsg{
     }
 
     pub fn send_secure(&mut self) -> Result<Vec<String>, u32> {
-        let url = format!("{}/agency/msg", settings::get_config_value(settings::CONFIG_AGENCY_ENDPOINT).unwrap());
-
         let data = match self.msgpack() {
             Ok(x) => x,
             Err(x) => return Err(x),
         };
 
-        if settings::test_agency_mode_enabled() {httpclient::set_next_u8_response(CREATE_KEYS_RESPONSE.to_vec());}
+        if settings::test_agency_mode_enabled() {
+            return Ok(vec!["U5LXs4U7P9msh647kToezy".to_string(), "FktSZg8idAVzyQZrdUppK6FTrfAzW3wWVzAjJAfdUvJq".to_string()]);
+        }
 
         let mut result = Vec::new();
-        match httpclient::post_u8(&data, &url) {
+        match httpclient::post_u8(&data) {
             Err(_) => return Err(error::POST_MSG_FAILURE.code_num),
             Ok(response) => {
                 let (did, vk) = parse_create_keys_response(response)?;
@@ -158,7 +157,8 @@ pub fn parse_create_keys_response(response: Vec<u8>) -> Result<(String, String),
 #[cfg(test)]
 mod tests {
     use super::*;
-    use utils::libindy::signus::SignusUtils;
+    use utils::constants::{ CREATE_KEYS_RESPONSE, MY1_SEED, MY2_SEED, MY3_SEED };
+    use utils::libindy::signus::create_and_store_my_did;
     use messages::create_keys;
     use utils::libindy::wallet;
 
@@ -194,16 +194,11 @@ mod tests {
     fn test_create_key_set_values_and_serialize() {
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "false");
-        let agency_wallet = wallet::init_wallet("test_create_key_set_values_and_serialize_agency").unwrap();
-        let agent_wallet = wallet::init_wallet("test_create_key_set_values_and_serialize_agent").unwrap();
-        let my_wallet = wallet::init_wallet("test_create_key_set_values_and_serialize_mine").unwrap();
+        let wallet = wallet::init_wallet("test_create_key_set_values_and_serialize").unwrap();
 
-        let (agent_did, agent_vk) = SignusUtils::create_and_store_my_did(agent_wallet, Some(MY2_SEED)).unwrap();
-        let (my_did, my_vk) = SignusUtils::create_and_store_my_did(my_wallet, Some(MY1_SEED)).unwrap();
-        let (agency_did, agency_vk) = SignusUtils::create_and_store_my_did(agency_wallet, Some(MY3_SEED)).unwrap();
-
-        SignusUtils::store_their_did_from_parts(my_wallet, agent_did.as_ref(), agent_vk.as_ref()).unwrap();
-        SignusUtils::store_their_did_from_parts(my_wallet, agency_did.as_ref(), agency_vk.as_ref()).unwrap();
+        let (agent_did, agent_vk) = create_and_store_my_did(wallet, Some(MY2_SEED)).unwrap();
+        let (my_did, my_vk) = create_and_store_my_did(wallet, Some(MY1_SEED)).unwrap();
+        let (agency_did, agency_vk) = create_and_store_my_did(wallet, Some(MY3_SEED)).unwrap();
 
         settings::set_config_value(settings::CONFIG_AGENCY_VERKEY, &agency_vk);
         settings::set_config_value(settings::CONFIG_REMOTE_TO_SDK_VERKEY, &agent_vk);
@@ -216,9 +211,7 @@ mod tests {
             .msgpack().unwrap();
         assert!(bytes.len() > 0);
 
-        wallet::delete_wallet("test_create_key_set_values_and_serialize_mine").unwrap();
-        wallet::delete_wallet("test_create_key_set_values_and_serialize_agent").unwrap();
-        wallet::delete_wallet("test_create_key_set_values_and_serialize_agency").unwrap();
+        wallet::delete_wallet("test_create_key_set_values_and_serialize").unwrap();
     }
 
     #[test]

@@ -1,10 +1,17 @@
 extern crate env_logger;
 extern crate log;
 extern crate log4rs;
+extern crate log_panics;
+#[cfg(target_os = "android")]
+extern crate android_logger;
 
 use settings;
 use std::sync::{Once, ONCE_INIT};
 use std::env;
+#[allow(unused_imports)]
+use self::log::{Level};
+#[cfg(target_os = "android")]
+use self::android_logger::Filter;
 
 pub struct LoggerUtils {}
 
@@ -51,19 +58,38 @@ impl LoggerUtils {
         };
 
         LOGGER_INIT.call_once(|| {
-            match settings::get_config_value(settings::CONFIG_LOG_CONFIG) {
-                Err(_) => {/* NO-OP - no logging configured */},
-                Ok(x) => {
-                    match log4rs::init_file(&x, Default::default()) {
-                        Err(e) => println!("invalid log configuration: {}", e),
-                        Ok(_) => {},
+            // Logging of panics is essential for android. As android does not log to stdout for native code
+            log_panics::init();
+            if cfg!(target_os = "android") {
+                #[cfg(target_os = "android")]
+                let log_filter = match env::var("RUST_LOG") {
+                    Ok(val) => match val.to_lowercase().as_ref(){
+                        "error" => Filter::default().with_min_level(log::Level::Error),
+                        "warn" => Filter::default().with_min_level(log::Level::Warn),
+                        "info" => Filter::default().with_min_level(log::Level::Info),
+                        "debug" => Filter::default().with_min_level(log::Level::Debug),
+                        "trace" => Filter::default().with_min_level(log::Level::Trace),
+                        _ => Filter::default().with_min_level(log::Level::Error),
+                    },
+                    Err(..) => Filter::default().with_min_level(log::Level::Error)
+                };
+
+                #[cfg(target_os = "android")]
+                android_logger::init_once(log_filter);
+                info!("Logging for Android");
+            } else {
+                match settings::get_config_value(settings::CONFIG_LOG_CONFIG) {
+                    Err(_) => {/* NO-OP - no logging configured */},
+                    Ok(x) => {
+                        match log4rs::init_file(&x, Default::default()) {
+                            Err(e) => println!("invalid log configuration: {}", e),
+                            Ok(_) => {},
+                        }
                     }
                 }
             }
         });
     }
-
-
 }
 
 #[cfg(test)]

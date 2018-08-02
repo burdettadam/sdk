@@ -16,12 +16,11 @@ use credential_def::{ retrieve_credential_def };
 use schema::{ LedgerSchema };
 
 use utils::libindy::anoncreds;
-use utils::libindy::wallet;
 use utils::libindy::crypto;
 
 use settings;
 use utils::httpclient;
-use utils::constants::{ SEND_MESSAGE_RESPONSE, CREDS_FROM_PROOF_REQ };
+use utils::constants::{ DEFAULT_SERIALIZE_VERSION, SEND_MESSAGE_RESPONSE, CREDS_FROM_PROOF_REQ };
 
 use serde_json::{Value};
 
@@ -215,8 +214,14 @@ impl DisclosedProof {
         let credentials_identifiers = credential_def_identifiers(credentials)?;
         let requested_credentials = self._build_requested_credentials(&credentials_identifiers,
                                                                       self_attested_attrs)?;
-        let schemas = self._find_schemas(&credentials_identifiers)?;
-        let credential_defs_json = self._find_credential_def(&credentials_identifiers)?;
+        let schemas = match self._find_schemas(&credentials_identifiers) {
+            Ok(x) => x,
+            Err(_) => format!("{{}}"),
+        };
+        let credential_defs_json = match self._find_credential_def(&credentials_identifiers) {
+            Ok(x) => x,
+            Err(_) => format!("{{}}"),
+        };
         let revoc_regs_json = Some("{}");
 
         let proof = anoncreds::libindy_prover_create_proof(&proof_req_data_json,
@@ -297,6 +302,19 @@ impl DisclosedProof {
 
     fn set_source_id(&mut self, id: &str) { self.source_id = id.to_string(); }
     fn get_source_id(&self) -> &String { &self.source_id }
+    fn to_string(&self) -> String {
+        json!({
+            "version": DEFAULT_SERIALIZE_VERSION,
+            "data": json!(self),
+        }).to_string()
+    }
+    fn from_str(s: &str) -> Result<DisclosedProof, ProofError> {
+        let s:Value = serde_json::from_str(&s)
+            .or(Err(ProofError::InvalidJson()))?;
+        let proof: DisclosedProof= serde_json::from_value(s["data"].clone())
+            .or(Err(ProofError::InvalidJson()))?;
+        Ok(proof)
+    }
 }
 
 //********************************************
@@ -340,15 +358,12 @@ pub fn update_state(handle: u32) -> Result<u32, u32> {
 
 pub fn to_string(handle: u32) -> Result<String, u32> {
     HANDLE_MAP.get(handle, |obj|{
-        serde_json::to_string(&obj).map_err(|e|{
-            warn!("Unable to serialize: {:?}", e);
-            error::SERIALIZATION_ERROR.code_num
-        })
+        Ok(DisclosedProof::to_string(&obj))
     })
 }
 
 pub fn from_string(proof_data: &str) -> Result<u32, ProofError> {
-    let derived_proof: DisclosedProof = match serde_json::from_str(proof_data) {
+    let derived_proof: DisclosedProof = match DisclosedProof::from_str(proof_data) {
         Ok(x) => x,
         Err(y) => return Err(ProofError::CommonError(error::INVALID_JSON.code_num)),
     };
@@ -402,17 +417,17 @@ pub fn get_proof_request(connection_handle: u32, msg_id: &str) -> Result<String,
 
     if settings::test_agency_mode_enabled() { ::utils::httpclient::set_next_u8_response(::utils::constants::NEW_PROOF_REQUEST_RESPONSE.to_vec()); }
 
-    let message = messages::get_message::get_matching_message(msg_id,
-                                                              &my_did,
-                                                              &my_vk,
-                                                              &agent_did,
-                                                              &agent_vk).map_err(|ec| ProofError::CommonError(ec))?;
+    let message = messages::get_message::get_connection_messages(&my_did,
+                                                                 &my_vk,
+                                                                 &agent_did,
+                                                                 &agent_vk,
+                                                                 Some(vec![msg_id.to_string()])).map_err(|ec| ProofError::CommonError(ec))?;
 
-    if message.msg_type.eq("proofReq") {
-        let msg_data = match message.payload {
+    if message[0].msg_type.eq("proofReq") {
+        let (_, msg_data) = match message[0].payload {
             Some(ref data) => {
                 let data = to_u8(data);
-                crypto::parse_msg(wallet::get_wallet_handle(), &my_vk, data.as_slice()).map_err(|ec| ProofError::CommonError(ec))?
+                crypto::parse_msg(&my_vk, data.as_slice()).map_err(|ec| ProofError::CommonError(ec))?
             },
             None => return Err(ProofError::CommonError(error::INVALID_HTTP_RESPONSE.code_num))
         };
@@ -421,7 +436,7 @@ pub fn get_proof_request(connection_handle: u32, msg_id: &str) -> Result<String,
         let mut request: ProofRequestMessage = serde_json::from_str(&request)
            .or(Err(ProofError::CommonError(error::INVALID_HTTP_RESPONSE.code_num)))?;
 
-        request.msg_ref_id = Some(message.uid.to_owned());
+        request.msg_ref_id = Some(message[0].uid.to_owned());
         Ok(serde_json::to_string_pretty(&request).unwrap())
     } else {
         Err(ProofError::CommonError(error::INVALID_MESSAGES.code_num))
@@ -437,10 +452,11 @@ pub fn get_proof_request_messages(connection_handle: u32, match_name: Option<&st
 
     if settings::test_agency_mode_enabled() { ::utils::httpclient::set_next_u8_response(::utils::constants::NEW_PROOF_REQUEST_RESPONSE.to_vec()); }
 
-    let payload = messages::get_message::get_all_message(&my_did,
-                                                         &my_vk,
-                                                         &agent_did,
-                                                         &agent_vk).map_err(|ec| ProofError::CommonError(ec))?;
+    let payload = messages::get_message::get_connection_messages(&my_did,
+                                                                 &my_vk,
+                                                                 &agent_did,
+                                                                 &agent_vk,
+                                                                 None).map_err(|ec| ProofError::CommonError(ec))?;
 
     let mut messages: Vec<ProofRequestMessage> = Default::default();
 
@@ -448,10 +464,10 @@ pub fn get_proof_request_messages(connection_handle: u32, match_name: Option<&st
         if msg.sender_did.eq(&my_did){ continue; }
 
         if msg.msg_type.eq("proofReq") {
-            let msg_data = match msg.payload {
+            let (_, msg_data) = match msg.payload {
                 Some(ref data) => {
                     let data = to_u8(data);
-                    crypto::parse_msg(wallet::get_wallet_handle(), &my_vk, data.as_slice())
+                    crypto::parse_msg(&my_vk, data.as_slice())
                         .map_err(|ec| ProofError::CommonError(ec))?
                 },
                 None => return Err(ProofError::CommonError(error::INVALID_HTTP_RESPONSE.code_num))
@@ -481,6 +497,7 @@ mod tests {
     extern crate serde_json;
 
     use super::*;
+    use utils::libindy::wallet;
     use utils::constants::{ ADDRESS_CRED_ID, LICENCE_CRED_ID, ADDRESS_SCHEMA_ID, ADDRESS_CRED_DEF_ID, CRED_DEF_ID, SCHEMA_ID };
     use serde_json::Value;
 
@@ -528,8 +545,9 @@ mod tests {
         settings::set_defaults();
         let handle = create_proof("id".to_string(),::utils::constants::PROOF_REQUEST_JSON.to_string()).unwrap();
         let serialized = to_string(handle).unwrap();
-        println!("serizlied: {}", serialized);
-        from_string(&serialized).unwrap();
+        let j:Value = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(j["version"], "1.0");
+        DisclosedProof::from_str(&serialized).unwrap();
     }
 
     #[test]
@@ -634,9 +652,9 @@ mod tests {
     fn test_retrieve_credentials() {
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "false");
-        let wallet_name = "test_retrieve_creds_disclosed_proof";
+        let wallet_name = "test_retrieve_credentials";
         ::utils::devsetup::tests::setup_ledger_env(wallet_name);
-        ::utils::libindy::payments::mint_tokens(None, Some(10000000)).unwrap();
+        ::utils::libindy::payments::mint_tokens_and_set_fees(None, Some(10000000), None, false).unwrap();
         ::utils::libindy::anoncreds::tests::create_and_store_credential();
         let did = settings::get_config_value(settings::CONFIG_INSTITUTION_DID).unwrap();
         let (_, _, req, _) = ::utils::libindy::anoncreds::tests::create_proof();
@@ -647,7 +665,6 @@ mod tests {
         proof.proof_request = Some(proof_req);
 
         let retrieved_creds = proof.retrieve_credentials().unwrap();
-        println!("retrieved_creds: {}", retrieved_creds);
         assert!(retrieved_creds.len() > 500);
 
         ::utils::devsetup::tests::cleanup_dev_env(wallet_name);
@@ -657,7 +674,7 @@ mod tests {
     fn test_retrieve_credentials_fails_with_no_proof_req() {
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "false");
-        let wallet_name = "test_retrieve_creds_disclosed_proof";
+        let wallet_name = "retrieve_credentials_fails_with_no_proof_req";
 
         let proof: DisclosedProof = Default::default();
         assert_eq!(proof.retrieve_credentials(), Err(ProofError::ProofNotReadyError()));
@@ -714,8 +731,13 @@ mod tests {
     #[cfg(feature = "pool_tests")]
     #[test]
     fn test_generate_proof() {
+        use utils::libindy::wallet::delete_wallet;
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "false");
         let wallet_name = "test_generate_proof";
+        match delete_wallet(wallet_name) {
+            Ok(_) => {},
+            Err(_) => {},
+        };
         ::utils::devsetup::tests::setup_ledger_env(wallet_name);
         let did = settings::get_config_value(settings::CONFIG_INSTITUTION_DID).unwrap();
         let (schema_id, _, cred_def_id, _, _, _, _, cred_id) = ::utils::libindy::anoncreds::tests::create_and_store_credential();
@@ -783,6 +805,52 @@ mod tests {
 
         let self_attested: Value = json!({
               "self_attested_attr_3":"attested_val"
+        });
+
+        let mut proof: DisclosedProof = Default::default();
+        proof.proof_request = Some(proof_req);
+        proof.link_secret_alias = "main".to_string();
+        let generated_proof = proof.generate_proof(&selected_credentials.to_string(), &self_attested.to_string());
+
+        ::utils::devsetup::tests::cleanup_dev_env(wallet_name);
+        assert!(generated_proof.is_ok());
+    }
+
+    #[cfg(feature = "pool_tests")]
+    #[test]
+    fn test_generate_self_attested_proof() {
+        use utils::libindy::wallet::delete_wallet;
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "false");
+        let wallet_name = "test_generate_self_attested_proof";
+        match delete_wallet(wallet_name) {
+            Ok(_) => {},
+            Err(_) => {},
+        };
+        ::utils::devsetup::tests::setup_ledger_env(wallet_name);
+        let did = settings::get_config_value(settings::CONFIG_INSTITUTION_DID).unwrap();
+
+        let mut proof_req = ProofRequestMessage::create();
+        let indy_proof_req = json!({
+           "nonce":"123432421212",
+           "name":"proof_req_1",
+           "version":"0.1",
+           "requested_attributes": json!({
+               "address1_1": json!({
+                   "name":"address1",
+               }),
+               "zip_2": json!({
+                   "name":"zip",
+               }),
+           }),
+           "requested_predicates": json!({}),
+        }).to_string();
+        proof_req.proof_request_data = serde_json::from_str(&indy_proof_req).unwrap();
+
+        let selected_credentials : Value = json!({});
+
+        let self_attested: Value = json!({
+              "address1_1":"attested_address",
+              "zip_2": "attested_zip"
         });
 
         let mut proof: DisclosedProof = Default::default();

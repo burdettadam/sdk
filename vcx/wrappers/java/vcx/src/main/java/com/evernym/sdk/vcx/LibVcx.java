@@ -47,7 +47,7 @@ public abstract class LibVcx {
         public int vcx_init(int command_handle, String config_path, Callback cb);
 
         public String vcx_error_c_message(int error_code);
-
+        public int vcx_shutdown(boolean delete);
         public int vcx_reset();
 /**
  * Schema object
@@ -174,6 +174,11 @@ public abstract class LibVcx {
          * Creates a connection from the invite details.
          */
         public int vcx_connection_create_with_invite(int command_handle, String source_id, String invite_details, Callback cb);
+
+        /**
+         * Deletes a connection and send a delete API request to backend to delete connection
+         */
+        public int vcx_connection_delete_connection(int command_handle, int connection_handle, Callback cb);
 
 
 /**
@@ -334,6 +339,21 @@ public abstract class LibVcx {
          */
         public int vcx_disclosed_proof_release(int proof_handle);
 
+        /**
+         * Create proof instance with a message id
+         */
+        public int vcx_disclosed_proof_create_with_msgid(int command_handle, String source_id, int connection_handle, String msd_id, Callback cb);
+
+        /**
+         * Retrieve credentials that matches with the proof request
+         */
+        public int vcx_disclosed_proof_retrieve_credentials(int command_handle, int proof_handle, Callback cb);
+
+        /**
+         * Generate a proof that can be sent later
+         */
+        public int vcx_disclosed_proof_generate_proof(int command_handle, int proof_handle, String selected_credentials, String self_attested_attributes, Callback cb);
+
 /**
  * claim object
  *
@@ -429,6 +449,45 @@ public abstract class LibVcx {
 
         /** Retrieve information about a stored credential in user's wallet, including credential id and the credential itself. */
         public int vcx_get_credential(int command_handle, int credential_handle, Callback cb);
+
+        /**
+        * wallet object
+        *
+        * Used for exporting and importing and managing the wallet.
+        */
+
+        /** Export the wallet as an encrypted file */
+        public int vcx_wallet_export(int command_handle, String path, String backup_key, Callback cb);
+
+        /** Import an encrypted file back into the wallet */
+        public int vcx_wallet_import(int command_handle, String config, Callback cb);
+
+        /** Add a record into wallet */
+        public int vcx_wallet_add_record(int command_handle, String recordType, String recordId, String recordValue, String recordTag, Callback cb);
+
+        /** Delete a record from wallet */
+        public int vcx_wallet_delete_record(int command_handle, String recordType, String recordId, Callback cb);
+
+        /** Get a record from wallet */
+        public int vcx_wallet_get_record(int command_handle, String recordType, String recordId, String recordTag, Callback cb);
+
+        /** Update a record in wallet */
+        public int vcx_wallet_update_record_value(int command_handle, String recordType, String recordId, String recordValue, Callback cb);
+
+        /**
+         * token object
+         *
+         * Used for sending tokens and getting token related info
+         */
+
+        /** Gets token Balance and payment addresses info */
+        public int vcx_wallet_get_token_info(int command_handle, int payment_handle, Callback cb);
+
+        /** Sends token to recipient */
+        public int vcx_wallet_send_tokens(int command_handle, int payment_handle, long tokens, String recipient, Callback cb);
+
+        /** Create a payment address and returns it */
+        public int vcx_wallet_create_payment_address(int command_handle, String seed, Callback cb);
 
     }
 

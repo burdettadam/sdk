@@ -77,6 +77,10 @@ if [ -z "${LIBINDY_DIR}" ] ; then
     else
         LIBINDY_DIR=$7
     fi
+
+    if [ -d "${LIBINDY_DIR}/lib" ] ; then
+            LIBINDY_DIR="${LIBINDY_DIR}/lib"
+    fi
 fi
 
 if [ -z "${LIBNULLPAY_DIR}" ] ; then
@@ -89,6 +93,9 @@ if [ -z "${LIBNULLPAY_DIR}" ] ; then
         exit 1
     else
         LIBNULLPAY_DIR=$8
+    fi
+    if [ -d "${LIBNULLPAY_DIR}/lib" ] ; then
+            LIBNULLPAY_DIR="${LIBNULLPAY_DIR}/lib"
     fi
 fi
 
@@ -123,12 +130,13 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     popd
 fi
 
-LIBVCX=${WORKDIR}/sdk/vcx/libvcx/
-cp -rf ./../../../../../vcx/libvcx/include ${LIBVCX}
-cp -rf ./../../../../../vcx/libvcx/scripts ${LIBVCX}
-cp -rf ./../../../../../vcx/libvcx/src ${LIBVCX}
-cp -rf ./../../../../../vcx/libvcx/build.rs ${LIBVCX}
-cp -rf ./../../../../../vcx/libvcx/Cargo.toml ${LIBVCX}
+#LIBVCX=${WORKDIR}/sdk/vcx/libvcx/
+#cp -rf ./../../../../../vcx/libvcx/include ${LIBVCX}
+#cp -rf ./../../../../../vcx/libvcx/scripts ${LIBVCX}
+#cp -rf ./../../../../../vcx/libvcx/src ${LIBVCX}
+#cp -rf ./../../../../../vcx/libvcx/build.rs ${LIBVCX}
+#cp -rf ./../../../../../vcx/libvcx/Cargo.toml ${LIBVCX}
+LIBVCX=../../../
 
 export PKG_CONFIG_ALLOW_CROSS=1
 export CARGO_INCREMENTAL=1
@@ -171,6 +179,18 @@ popd
 
 LIBVCX_BUILDS=${WORKDIR}/libvcx_${TARGET_ARCH}
 mkdir -p ${LIBVCX_BUILDS}
-$CC -v -shared -o ${LIBVCX_BUILDS}/libvcx.so -Wl,--whole-archive ${LIBVCX}/target/${CROSS_COMPILE}/release/libvcx.a ${TOOLCHAIN_DIR}/sysroot/usr/lib/libz.so ${TOOLCHAIN_DIR}/sysroot/usr/lib/libm.a ${TOOLCHAIN_DIR}/sysroot/usr/lib/liblog.so ${LIBINDY_DIR}/libindy.a ${OPENSSL_DIR}/lib/libssl.a ${OPENSSL_DIR}/lib/libcrypto.a ${SODIUM_LIB_DIR}/libsodium.a ${LIBZMQ_LIB_DIR}/libzmq.a ${TOOLCHAIN_DIR}/${CROSS_COMPILE}/lib/libstdc++.a -Wl,--no-whole-archive -z muldefs
+$CC -v -shared -o ${LIBVCX_BUILDS}/libvcx.so -Wl,--whole-archive \
+${LIBVCX}/target/${CROSS_COMPILE}/release/libvcx.a \
+${TOOLCHAIN_DIR}/sysroot/usr/lib/libz.so \
+${TOOLCHAIN_DIR}/sysroot/usr/lib/libm.a \
+${TOOLCHAIN_DIR}/sysroot/usr/lib/liblog.so \
+${LIBINDY_DIR}/libindy.a \
+${LIBNULLPAY_DIR}/libnullpay.a \
+${TOOLCHAIN_DIR}/${CROSS_COMPILE}/lib/libgnustl_shared.so \
+${OPENSSL_DIR}/lib/libssl.a \
+${OPENSSL_DIR}/lib/libcrypto.a \
+${SODIUM_LIB_DIR}/libsodium.a \
+${LIBZMQ_LIB_DIR}/libzmq.a \
+${TOOLCHAIN_DIR}/${CROSS_COMPILE}/lib/libgnustl_shared.so -Wl,--no-whole-archive -z muldefs
 cp "${LIBVCX}/target/${CROSS_COMPILE}/release/libvcx.a" ${LIBVCX_BUILDS}/
 

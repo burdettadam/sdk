@@ -63,16 +63,13 @@ fn main() {
         println!("cargo:rustc-link-lib=static=indy");
     }else if target.contains("aarch64-linux-android") || target.contains("armv7-linux-androideabi") ||
         target.contains("arm-linux-androideabi") || target.contains("i686-linux-android") ||
-        target.contains("x86_64-linux-android") {
+        target.contains("x86_64-linux-android") || target.contains("aarch64-apple-ios") ||
+        target.contains("armv7-apple-ios") || target.contains("armv7s-apple-ios") ||
+        target.contains("i386-apple-ios") || target.contains("x86_64-apple-ios") {
 
         let libindy_lib_path = match env::var("LIBINDY_DIR"){
             Ok(val) => val,
             Err(..) => panic!("Missing required environment variable LIBINDY_DIR")
-        };
-
-        let libnullpay_lib_path = match env::var("LIBNULLPAY_DIR"){
-            Ok(val) => val,
-            Err(..) => panic!("Missing required environment variable LIBNULLPAY_DIR")
         };
 
         let openssl = match env::var("OPENSSL_LIB_DIR") {
@@ -88,8 +85,23 @@ fn main() {
         println!("cargo:rustc-link-search=native={}", openssl);
         println!("cargo:rustc-link-lib=static=crypto");
         println!("cargo:rustc-link-lib=static=ssl");
-        println!("cargo:rustc-link-search=native={}",libnullpay_lib_path);
-        println!("cargo:rustc-link-lib=static=nullpay");
+        if cfg!(feature = "nullpay") {
+            let libnullpay_lib_path = match env::var("LIBNULLPAY_DIR") {
+                Ok(val) => val,
+                Err(..) => panic!("Missing required environment variable LIBNULLPAY_DIR")
+            };
+
+            println!("cargo:rustc-link-search=native={}",libnullpay_lib_path);
+            println!("cargo:rustc-link-lib=static=nullpay");
+        } else if cfg!(feature = "sovtoken") {
+            let libsovtoken_lib_path = match env::var("LIBSOVTOKEN_DIR") {
+                Ok(val) => val,
+                Err(..) => panic!("Missing required environment variable LIBSOVTOKEN_DIR")
+            };
+
+            println!("cargo:rustc-link-search=native={}",libsovtoken_lib_path);
+            println!("cargo:rustc-link-lib=static=sovtoken");
+        }
     }else if target.contains("darwin"){
         //OSX specific logic
         println!("cargo:rustc-link-lib=indy");
@@ -97,6 +109,8 @@ fn main() {
         println!("cargo:rustc-link-search=native=/usr/local/lib");
         if cfg!(feature = "nullpay") {
           println!("cargo:rustc-link-lib=nullpay");
+        } else if cfg!(feature = "sovtoken") {
+            println!("cargo:rustc-link-lib=sovtoken");
         }
     }else if target.contains("-linux-"){
         //Linux specific logic
@@ -104,6 +118,8 @@ fn main() {
         println!("cargo:rustc-link-search=native=/usr/lib");
         if cfg!(feature = "nullpay") {
           println!("cargo:rustc-link-lib=nullpay");
+        } else if cfg!(feature = "sovtoken") {
+            println!("cargo:rustc-link-lib=sovtoken");
         }
     }
 

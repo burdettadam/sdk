@@ -218,10 +218,144 @@ pub extern fn vcx_set_next_agency_response(message_index: u32) {
         5 => UPDATE_PROOF_RESPONSE.to_vec(),
         6 => CREDENTIAL_REQ_RESPONSE.to_vec(),
         7 => PROOF_RESPONSE.to_vec(),
+        8 => CREDENTIAL_RESPONSE.to_vec(),
         _ => Vec::new(),
     };
 
     httpclient::set_next_u8_response(message);
+}
+
+/// Retrieve messages from the specified connection
+///
+/// #params
+///
+/// command_handle: command handle to map callback to user context.
+///
+/// message_status: optional - query for messages with the specified status
+///
+/// uids: optional, comma separated - query for messages with the specified uids
+///
+/// cb: Callback that provides array of matching messages retrieved
+///
+/// #Returns
+/// Error code as a u32
+
+#[no_mangle]
+pub extern fn vcx_messages_download(command_handle: u32,
+                                    message_status: *const c_char,
+                                    uids: *const c_char,
+                                    pw_dids: *const c_char,
+                                    cb: Option<extern fn(xcommand_handle: u32, err: u32, messages: *const c_char)>) -> u32 {
+
+    check_useful_c_callback!(cb, error::INVALID_OPTION.code_num);
+
+    let message_status = if !message_status.is_null() {
+        check_useful_c_str!(message_status, error::INVALID_OPTION.code_num);
+        let v: Vec<&str> = message_status.split(',').collect();
+        let v = v.iter().map(|s| s.to_string()).collect::<Vec<String>>();
+        Some(v.to_owned())
+    } else {
+        None
+    };
+
+    let uids = if !uids.is_null() {
+        check_useful_c_str!(uids, error::INVALID_OPTION.code_num);
+        let v: Vec<&str> = uids.split(',').collect();
+        let v = v.iter().map(|s| s.to_string()).collect::<Vec<String>>();
+        Some(v.to_owned())
+    } else {
+        None
+    };
+
+    let pw_dids = if !pw_dids.is_null() {
+        check_useful_c_str!(pw_dids, error::INVALID_OPTION.code_num);
+        let v: Vec<&str> = pw_dids.split(',').collect();
+        let v = v.iter().map(|s| s.to_string()).collect::<Vec<String>>();
+        Some(v.to_owned())
+    } else {
+        None
+    };
+
+    info!("vcx_messages_download(command_handle: {}, message_status: {:?}, uids: {:?})",
+          command_handle, message_status, uids);
+
+    thread::spawn(move|| {
+        match ::messages::get_message::download_messages(pw_dids, message_status, uids) {
+            Ok(x) => {
+                match  serde_json::to_string(&x) {
+                    Ok(x) => {
+                        info!("vcx_messages_download_cb(command_handle: {}, rc: {}, messages: {})",
+                              command_handle, error::error_string(0), x);
+
+                        let msg = CStringUtils::string_to_cstring(x);
+                        cb(command_handle, error::SUCCESS.code_num, msg.as_ptr());
+                    },
+                    Err(_) => {
+                        warn!("vcx_messages_download_cb(command_handle: {}, rc: {}, messages: {})",
+                              command_handle, error_string(error::INVALID_JSON.code_num), "null");
+
+                        cb(command_handle, error::INVALID_JSON.code_num, ptr::null_mut());
+                    },
+                };
+            },
+            Err(e) => {
+                warn!("vcx_messages_download_cb(command_handle: {}, rc: {}, messages: {})",
+                      command_handle, error_string(e), "null");
+
+                cb(command_handle, e, ptr::null_mut());
+            },
+        };
+    });
+
+    error::SUCCESS.code_num
+}
+
+/// Update the status of messages from the specified connection
+///
+/// #params
+///
+/// command_handle: command handle to map callback to user context.
+///
+/// message_status: updated status
+///
+/// uids: messages to update
+///
+/// cb: Callback that provides success or failure of request
+///
+/// #Returns
+/// Error code as a u32
+
+#[no_mangle]
+pub extern fn vcx_messages_update_status(command_handle: u32,
+                                         message_status: *const c_char,
+                                         msg_json: *const c_char,
+                                         cb: Option<extern fn(xcommand_handle: u32, err: u32)>) -> u32 {
+
+    check_useful_c_callback!(cb, error::INVALID_OPTION.code_num);
+    check_useful_c_str!(message_status, error::INVALID_OPTION.code_num);
+    check_useful_c_str!(msg_json, error::INVALID_OPTION.code_num);
+
+    info!("vcx_messages_set_status(command_handle: {}, message_status: {:?}, uids: {:?})",
+          command_handle, message_status, msg_json);
+
+    thread::spawn(move|| {
+        match ::messages::update_message::update_agency_messages(&message_status, &msg_json) {
+            Ok(_) => {
+                info!("vcx_messages_set_status_cb(command_handle: {}, rc: {})",
+                    command_handle, error::error_string(0));
+
+                cb(command_handle, error::SUCCESS.code_num);
+            },
+            Err(e) => {
+                warn!("vcx_messages_set_status_cb(command_handle: {}, rc: {})",
+                      command_handle, error_string(e));
+
+                cb(command_handle, e);
+            },
+        };
+    });
+
+    error::SUCCESS.code_num
 }
 
 #[cfg(test)]
@@ -257,12 +391,15 @@ mod tests {
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "true");
 
+
         let json_string = r#"{"agency_url":"https://enym-eagency.pdev.evernym.com","agency_did":"Ab8TvZa3Q19VNkQVzAWVL7","agency_verkey":"5LXaR43B1aQyeh94VBP8LG1Sgvjk7aNfqiksBCSjwqbf","wallet_name":"test_provision_agent","agent_seed":null,"enterprise_seed":null,"wallet_key":"key"}"#;
         let c_json = CString::new(json_string).unwrap().into_raw();
-
-        let result = vcx_agent_provision_async(0, c_json, Some(generic_cb));
+        use utils::libindy::return_types_u32;
+        let cb = return_types_u32::Return_U32_STR::new().unwrap();
+        let result = vcx_agent_provision_async(cb.command_handle, c_json, Some(cb.get_callback()));
         assert_eq!(0, result);
-        thread::sleep(Duration::from_secs(1));
+        let result = cb.receive(Some(Duration::from_secs(2))).unwrap();
+        assert!(result.is_some());
     }
 
     #[test]
@@ -270,17 +407,15 @@ mod tests {
         settings::set_defaults();
         settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE, "true");
 
-        httpclient::set_next_u8_response(REGISTER_RESPONSE.to_vec()); //set response garbage
         let json_string = r#"{"agency_url":"https://enym-eagency.pdev.evernym.com","agency_did":"Ab8TvZa3Q19VNkQVzAWVL7","agency_verkey":"5LXaR43B1aQyeh94VBP8LG1Sgvjk7aNfqiksBCSjwqbf","wallet_name":"test_provision_agent","agent_seed":null,"enterprise_seed":null,"wallet_key":null}"#;
         let c_json = CString::new(json_string).unwrap().into_raw();
 
         let result = vcx_agent_provision_async(0, c_json, Some(generic_cb));
-
-        thread::sleep(Duration::from_secs(1));
+        assert_eq!(result, error::INVALID_JSON.code_num);
     }
 
     extern "C" fn update_cb(command_handle: u32, err: u32) {
-        if err != 0 {panic!("update_cb failed")}
+        if err != 0 {panic!("update_cb failed: {}", err)}
         println!("successfully called update_cb")
     }
 
@@ -317,6 +452,34 @@ mod tests {
 
         let result = vcx_ledger_get_fees(0, Some(generic_cb));
         assert_eq!(result,0);
+        thread::sleep(Duration::from_secs(1));
+    }
+
+    extern "C" fn get_agency_messages_cb(command_handle: u32, err: u32, messages: *const c_char) {
+        if err != 0 {panic!("get_agency_messages failed")}
+        check_useful_c_str!(messages, ());
+    }
+
+    #[test]
+    fn test_messages_download() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"true");
+
+        let rc = vcx_messages_download(0, ptr::null_mut(), ptr::null_mut(), ptr::null_mut(), Some(get_agency_messages_cb));
+        assert_eq!(rc, error::SUCCESS.code_num);
+        thread::sleep(Duration::from_secs(1));
+    }
+
+    #[test]
+    fn test_messages_update_status() {
+        settings::set_defaults();
+        settings::set_config_value(settings::CONFIG_ENABLE_TEST_MODE,"true");
+
+        let status = CString::new("MS-103").unwrap().into_raw();
+        let json = CString::new(r#"[{"pairwiseDID":"QSrw8hebcvQxiwBETmAaRs","uids":["mgrmngq"]}]"#).unwrap().into_raw();
+
+        let rc = vcx_messages_update_status(0, status, json, Some(update_cb));
+        assert_eq!(rc, error::SUCCESS.code_num);
         thread::sleep(Duration::from_secs(1));
     }
 }

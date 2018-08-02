@@ -66,35 +66,19 @@ public class VcxApi extends VcxJava.API {
         return future;
     }
 
+    public static int vcxShutdown(Boolean deleteWallet) throws VcxException {
+        
+
+        int result = LibVcx.api.vcx_shutdown(deleteWallet);
+        checkResult(result);
+        return result;
+    }
+
     public static String vcxErrorCMessage(int errorCode) {
         Log.d(TAG, "vcxErrorCMessage() called with: errorCode = [" + errorCode + "]");
         return LibVcx.api.vcx_error_c_message(errorCode);
 
 
     }
-
-//    public static CompletableFuture<Integer> vcxGenerateProof(
-//            String proofRequestId,
-//            String requestedAttrs,
-//            String requestedPredicates,
-//            String proofName
-//    ) throws VcxException {
-//        ParamGuard.notNull(proofRequestId, "proofRequestId");
-//        ParamGuard.notNullOrWhiteSpace(requestedAttrs, "requestedAttrs");
-//        ParamGuard.notNullOrWhiteSpace(requestedPredicates, "requestedPredicates");
-//        ParamGuard.notNullOrWhiteSpace(proofName, "proofName");
-//        CompletableFuture<Integer> future = new CompletableFuture<Integer>();
-//        int commandHandle = addFuture(future);
-//
-//        int result = LibVcx.api.vcx_proof_create(
-//                proofRequestId,
-//                requestedAttrs,
-//                requestedPredicates,
-//                proofName,
-//                vcxGenerateProofCB
-//        );
-//        checkResult(result);
-//        return future;
-//    }
 
 }

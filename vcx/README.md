@@ -6,14 +6,14 @@
 3) Clone this repo to your local machine.
 4) From the local repository run the following commands to verify everything works:
     ```
-    sudo curl -fsOSL https://repo.sovrin.org/sdk/deb/pool/xenial/stable/libi/libindy/libindy_1.4.0_amd64.deb\
-    && sudo dpkg -i libindy_1.4.0_amd64.deb\
+    sudo curl -fsOSL https://repo.sovrin.org/sdk/deb/pool/xenial/stable/libi/libindy/libindy_1.6.1_amd64.deb\
+    && sudo dpkg -i libindy_1.6.1_amd64.deb\
     && sudo apt-get -f install
     ```
 3) Install libnullpay 
     ```
-    sudo curl -fsOSL https://repo.sovrin.org/sdk/lib/apt/xenial/master/libnullpay_0.1.0~568_amd64.deb\
-    && sudo dpkg -i libnullpay_0.1.0~568_amd64.deb\
+    sudo curl -fsOSL https://repo.sovrin.org/sdk/lib/apt/xenial/master/libnullpay_1.6.1~684_amd64.deb\
+    && sudo dpkg -i libnullpay_1.6.1~684_amd64.deb\
     && sudo apt-get -f install
     ```
 4) Clone this repo to your local machine.
@@ -23,7 +23,6 @@
     ```
 5) From the local repository run the following commands to verify everything works:
     ```
-    TARGET=-linux-;\
     cargo build;\
     cargo test
     ```
@@ -131,10 +130,12 @@ To build libvcx on your own you can follow these steps --
     - Copy generated `libindy.a` file to whatever location you want
     - Set env variable `LIBINDY_DIR=<Directory_containing_libindy.a>`. e.g `export LIBINDY_DIR=/usr/local/aarch64-linux-android/libindy` libindy directory holds libindy.a
 4) Run `install_toolchains.sh`. You need to run this once to setup toolchains for android
-5) Run `android_build.sh aarm64` to build libvcx for aarm64 architecture.(Other architerctures will follow soon)
+5) Run `android_build.sh aarm64` to build libvcx for aarm64 architecture. (Other architectures will follow soon)
 6) Tests are not working on Android as of now.
 
-###Developing 
-Current developers suggest using intellij for IDE development (https://www.jetbrains.com/idea/download/) with the rust plugin (https://plugins.jetbrains.com/plugin/8182-rust).
+### Developing 
+Current developers suggest using IntelliJ for IDE development (https://www.jetbrains.com/idea/download/) with the rust plugin (https://plugins.jetbrains.com/plugin/8182-rust).
  
-
+### Trouble Shooting
+#### `this function takes 2 parameters but 3 parameter where supplied`
+Libvcx is currently using a library that acts as a Rust wrapper for libindy. It is found here: https://github.com/burdettadam/rust-indy-sdk/. It could be something to do with library versioning. Try running cargo clean -> cargo update -> cargo build.
